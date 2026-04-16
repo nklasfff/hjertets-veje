@@ -729,6 +729,38 @@
     margin-bottom: 1.8rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid rgba(196,162,101,0.15);
+    position: relative;
+  }
+  .reflection-entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+  .reflection-entry-delete {
+    font-family: var(--sans);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--warm-grey);
+    background: none;
+    border: none;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.25s, color 0.25s;
+  }
+  .reflection-entry-delete:hover {
+    opacity: 1;
+    color: var(--bordeaux);
+  }
+  [data-theme="dark"] .reflection-entry-delete {
+    color: #b8a896;
+    opacity: 0.7;
+  }
+  [data-theme="dark"] .reflection-entry-delete:hover {
+    color: #e0a8b2;
+    opacity: 1;
   }
   .reflection-entry-date {
     font-family: var(--sans);
@@ -736,7 +768,6 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--warm-grey);
-    margin-bottom: 0.3rem;
   }
   .reflection-entry-q {
     font-family: var(--serif);
@@ -1641,6 +1672,16 @@
       return entries;
     }
 
+    function deleteEntry(qId, date) {
+      if (!confirm('Er du sikker på at du vil slette denne refleksion? Den kan ikke gendannes.')) return;
+      var data = getData();
+      if (!Array.isArray(data[qId])) return;
+      data[qId] = data[qId].filter(function(e) { return e.date !== date; });
+      if (data[qId].length === 0) delete data[qId];
+      saveData(data);
+      renderOverview();
+    }
+
     function renderOverview() {
       var entries = collectEntries();
       var list = document.getElementById('reflectionsList');
@@ -1658,13 +1699,23 @@
         var d = new Date(e.date);
         var dateStr = d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
         var timeStr = d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+        var safeDate = e.date.replace(/"/g, '');
         html += '<div class="reflection-entry">';
+        html += '<div class="reflection-entry-head">';
         html += '<div class="reflection-entry-date">' + dateStr + ' · ' + timeStr + '</div>';
+        html += '<button type="button" class="reflection-entry-delete" data-qid="' + e.qId + '" data-date="' + safeDate + '" aria-label="Slet refleksion">Slet</button>';
+        html += '</div>';
         html += '<div class="reflection-entry-q">' + (questions[e.qId] || 'Spørgsmål ' + e.qId) + '</div>';
         html += '<div class="reflection-entry-text">' + e.text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') + '</div>';
         html += '</div>';
       });
       list.innerHTML = html;
+      // Binder delete-knapper efter render
+      list.querySelectorAll('.reflection-entry-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          deleteEntry(btn.dataset.qid, btn.dataset.date);
+        });
+      });
     }
 
     function formatExportText() {
