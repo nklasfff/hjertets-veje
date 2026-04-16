@@ -432,17 +432,19 @@ function initScene1() {
         y = startPos[i3+1]*(1-emergeT) + hy*emergeT;
         z = startPos[i3+2]*(1-emergeT) + hz*emergeT;
       } else if (i < PER_H*3) {
-        // Hjerte C (kommer ind fra højre ved 8s)
-        if (!cVisible) {
-          x = -100; y = -100; z = 0;
+        // Hjerte C (glider smooth ind fra langt uden for synsfeltet)
+        if (elapsed < 8) {
+          // Helt usynligt — langt uden for kamera-frustum
+          x = 20; y = 0; z = -10;
         } else {
-          const fadeIn = easeInOutQuad(Math.min(1, (elapsed-7.5)/1.5));
+          const slideT = easeInOutQuad(Math.min(1, (elapsed-8)/2));
           const hx = cx + localX[i] * pulse;
           const hy = cy + localY[i] * pulse;
           const hz = localZ[i];
-          x = (4 + localX[i])*(1-fadeIn) + hx*fadeIn;
-          y = localY[i]*(1-fadeIn) + hy*fadeIn;
-          z = hz * fadeIn;
+          // Start langt ude til højre (x=8), glid til position
+          x = 8*(1-slideT) + hx*slideT;
+          y = hy;
+          z = hz * slideT;
         }
       } else {
         // Sky-partikler: synlige i starten, opløses når hjerterne former sig
