@@ -99,7 +99,7 @@ function initScene(containerId, fov, loopDuration) {
   const state = {
     active: false,
     startTime: 0,
-    loopDuration: loopDuration || 12,
+    loopDuration: loopDuration || 14,
     width: width,
     height: height,
   };
@@ -290,7 +290,7 @@ function initHero() {
    i et fælles, orbiterende felt.
    ============================================================ */
 function initScene1() {
-  const ctx = initScene('scene1', 55, 12);
+  const ctx = initScene('scene1', 55, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -432,7 +432,7 @@ function initScene1() {
    y- og x-plan — strukturen ses fra forskellige dimensioner.
    ============================================================ */
 function initScene2() {
-  const ctx = initScene('scene2', 50, 12);
+  const ctx = initScene('scene2', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -627,10 +627,10 @@ function initScene2() {
 
       // Heartbeat efter samling
       if (heartDone) {
-        const beatT = (elapsed - T_UNFOLD_END) * (70 / 60);
-        const beat  = Math.pow(Math.max(0, Math.sin(beatT * Math.PI * 2)), 4);
-        const beat2 = Math.pow(Math.max(0, Math.sin((beatT + 0.15) * Math.PI * 2)), 6) * 0.6;
-        const pulse = 1 + (beat + beat2) * 0.07;
+        const beatT = (elapsed - T_UNFOLD_END) * (50 / 60);
+        const beat  = Math.pow(Math.max(0, Math.sin(beatT * Math.PI * 2)), 3);
+        const beat2 = Math.pow(Math.max(0, Math.sin((beatT + 0.18) * Math.PI * 2)), 5) * 0.55;
+        const pulse = 1 + (beat + beat2) * 0.04;
         px = heartTargets[i3]     * pulse;
         py = heartTargets[i3 + 1] * pulse;
         pz = heartTargets[i3 + 2];
@@ -701,7 +701,7 @@ function initScene2() {
      9.0 – 10s   NY FORM:   bredere, åbnere, blid ånding, varm
    ============================================================ */
 function initScene3() {
-  const ctx = initScene('scene3', 50, 12);
+  const ctx = initScene('scene3', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -799,7 +799,7 @@ function initScene3() {
   const lightningMat = new THREE.PointsMaterial({
     size: 0.13,
     map: softCircleTexture(),
-    color: 0xfff8e0,
+    color: 0xff8830, // tydelig orange lyn
     transparent: true,
     opacity: 0,
     sizeAttenuation: true,
@@ -811,7 +811,7 @@ function initScene3() {
 
   // ---- Farver til transition ----
   const colGrey  = new THREE.Color(0x4a4458); // fase 1: grå-indigo
-  const colFlash = new THREE.Color(0xfff8e0); // flash: varm hvid
+  const colFlash = new THREE.Color(0xff8830); // flash: tydelig orange
   const colWarm  = new THREE.Color(0x8a3040); // fase 3 start: bordeaux
   const colAlive = new THREE.Color(0xc4a265); // fase 3 mål: guld
   const tmpColor = new THREE.Color();
@@ -833,9 +833,8 @@ function initScene3() {
     const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
-    // Hjerteslag: 50 BPM (1.2s per slag), 58 BPM (~1.034s)
+    // Hjerteslag: 50 BPM (1.2s per slag) — ensartet med alle scener
     const pulse50 = Math.sin(elapsed * (Math.PI * 2 / 1.2));
-    const pulse58 = Math.sin(elapsed * (Math.PI * 2 / 1.034));
 
     for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
@@ -879,9 +878,9 @@ function initScene3() {
         x += Math.sin(elapsed * 1.5 + phases[i]) * spiralAmp;
         y += Math.cos(elapsed * 1.5 + phases[i] * 1.3) * spiralAmp;
 
-      } else if (elapsed < 11.0) {
-        // FASE 3b: Nyt hjerte pulser (58 BPM)
-        const s = 1.0 + pulse58 * 0.05;
+      } else if (elapsed < 14.0) {
+        // FASE 3b: Nyt hjerte pulser (50 BPM — ensartet)
+        const s = 1.0 + pulse50 * 0.04;
         const drift = 0.02;
         x = heartPos2[i3]     * s + Math.sin(elapsed * 0.5 + phases[i]) * drift;
         y = heartPos2[i3 + 1] * s + Math.cos(elapsed * 0.45 + phases[i] * 1.1) * drift;
@@ -954,7 +953,7 @@ function initScene3() {
    og varmer op igen når de falder tilbage.
    ============================================================ */
 function initScene4() {
-  const ctx = initScene('scene4', 45, 12);
+  const ctx = initScene('scene4', 45, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1004,7 +1003,12 @@ function initScene4() {
                         - 0.5 * GRAVITY * age * age;
     positions[i3 + 2] = spawnJitter[i3 + 2] + initVel[i3 + 2] * age;
 
-    colors[i3] = 0.8; colors[i3 + 1] = 0.8; colors[i3 + 2] = 0.8;
+    // Tilfældig farve fra hele paletten
+    const palIdx = Math.floor(Math.random() * 10);
+    const palCols = [0xc4a265,0x6b2737,0xb8707a,0xd4a0a8,0x4a7a8a,0x7a6a8a,0x6a9a7a,0xd4a070,0xe0b060,0xa898c0];
+    const pc = new THREE.Color(palCols[palIdx]);
+    const br = 0.85 + Math.random() * 0.2;
+    colors[i3] = pc.r * br; colors[i3 + 1] = pc.g * br; colors[i3 + 2] = pc.b * br;
   }
 
   const geo = new THREE.BufferGeometry();
@@ -1025,13 +1029,7 @@ function initScene4() {
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
-  // ---- Farver ----
-  // Partiklerne farves baseret på afstand fra kilden:
-  //   nær kilden = varm gylden (det der vækkes)
-  //   langt fra kilden = dyb teal (det modne, lyttende)
-  const colSource = new THREE.Color(0xd4a060); // varm gylden
-  const colFar    = new THREE.Color(0x4a6a82); // dyb teal
-  const MAX_DIST  = 2.6;
+  // Farver sættes ved init per partikel fra paletten — ingen runtime opdatering
 
   function animate() {
     requestAnimationFrame(animate);
@@ -1039,7 +1037,6 @@ function initScene4() {
 
     const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
-    const col = geo.attributes.color.array;
 
     for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
@@ -1073,19 +1070,10 @@ function initScene4() {
       pos[i3 + 1] = py;
       pos[i3 + 2] = pz;
 
-      // Farve baseret på afstand fra kilde
-      const dx = px;
-      const dy = py - SOURCE_Y;
-      const dz = pz;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const t = Math.min(1, dist / MAX_DIST);
-      col[i3]     = colSource.r + (colFar.r - colSource.r) * t;
-      col[i3 + 1] = colSource.g + (colFar.g - colSource.g) * t;
-      col[i3 + 2] = colSource.b + (colFar.b - colSource.b) * t;
+      // Farver bevares fra init — ingen runtime ændring
     }
 
     geo.attributes.position.needsUpdate = true;
-    geo.attributes.color.needsUpdate = true;
 
     // Meget lille vuggen — fontænen er næsten stationær
     points.rotation.y = Math.sin(elapsed * 0.08) * 0.04;
@@ -1110,7 +1098,7 @@ function initScene4() {
    Kontinuerlig tilstand (ingen faser).
    ============================================================ */
 function initScene5() {
-  const ctx = initScene('scene5', 50, 12);
+  const ctx = initScene('scene5', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1164,11 +1152,13 @@ function initScene5() {
     heartPositions[i3 + 1] = heartBase[i3 + 1];
     heartPositions[i3 + 2] = heartBase[i3 + 2];
 
-    // Bordeaux variationer
-    const bright = 0.9 + Math.random() * 0.2;
-    heartColors[i3]     = 0.42 * bright; // 6b2737 ≈ (0.42, 0.15, 0.22)
-    heartColors[i3 + 1] = 0.15 * bright;
-    heartColors[i3 + 2] = 0.22 * bright;
+    // Alle farver fra paletten
+    const hPalCols = [0x6b2737,0xc4a265,0xb8707a,0xd4a0a8,0x4a7a8a,0x7a6a8a,0x6a9a7a,0xd4a070,0xe0b060,0xa898c0];
+    const hpc = new THREE.Color(hPalCols[Math.floor(Math.random() * hPalCols.length)]);
+    const bright = 0.88 + Math.random() * 0.2;
+    heartColors[i3]     = hpc.r * bright;
+    heartColors[i3 + 1] = hpc.g * bright;
+    heartColors[i3 + 2] = hpc.b * bright;
   }
 
   const heartGeo = new THREE.BufferGeometry();
@@ -1201,11 +1191,17 @@ function initScene5() {
   const streamWobPhase   = new Float32Array(STREAM_TOTAL);
   const streamSpeed      = new Float32Array(STREAM_TOTAL); // lille variation
 
+  const sPalCols = [0x6b2737,0xc4a265,0xb8707a,0xd4a0a8,0x4a7a8a,0x7a6a8a,0x6a9a7a,0xd4a070,0xe0b060,0xa898c0];
   for (let i = 0; i < STREAM_TOTAL; i++) {
     streamInitPhase[i] = Math.random();
     streamArm[i]       = i < ARM_COUNT ? 0 : 1;
     streamWobPhase[i]  = Math.random() * Math.PI * 2;
-    streamSpeed[i]     = 0.08 + Math.random() * 0.025; // ca. 10–12s per fuld rejse
+    streamSpeed[i]     = 0.08 + Math.random() * 0.025;
+    // Tilfældig fast farve fra hele paletten
+    const spc = new THREE.Color(sPalCols[Math.floor(Math.random() * sPalCols.length)]);
+    const sbr = 0.85 + Math.random() * 0.2;
+    const i3 = i * 3;
+    streamColors[i3] = spc.r * sbr; streamColors[i3+1] = spc.g * sbr; streamColors[i3+2] = spc.b * sbr;
   }
 
   const streamGeo = new THREE.BufferGeometry();
@@ -1282,9 +1278,7 @@ function initScene5() {
   const handMesh = new THREE.Points(handGeo, handMat);
   scene.add(handMesh);
 
-  // ---- Farver til stream-gradient ----
-  const colStreamStart = new THREE.Color(0xc4a265); // guld nær hjertet
-  const colStreamEnd   = new THREE.Color(0xd4a0a8); // rosa nær hånden
+  // Farver sat per partikel ved init — ingen runtime gradient
 
   const tmpOut = [0, 0, 0];
 
@@ -1295,10 +1289,10 @@ function initScene5() {
     const elapsed = loopElapsed(state);
 
     // ---- HJERTE: blid, langsom puls ----
-    const beatT = elapsed * (48 / 60); // 48 BPM — meditativt tempo
+    const beatT = elapsed * (50 / 60); // 50 BPM — ensartet med alle scener
     const beat  = Math.pow(Math.max(0, Math.sin(beatT * Math.PI * 2)),     3);
     const beat2 = Math.pow(Math.max(0, Math.sin((beatT + 0.18) * Math.PI * 2)), 5) * 0.55;
-    const pulse = 1 + (beat + beat2) * 0.05;
+    const pulse = 1 + (beat + beat2) * 0.04;
 
     const hPos = heartGeo.attributes.position.array;
     for (let i = 0; i < HEART_COUNT; i++) {
@@ -1312,7 +1306,7 @@ function initScene5() {
 
     // ---- STRØM: partikler advancerer langs bezier ----
     const sPos = streamGeo.attributes.position.array;
-    const sCol = streamGeo.attributes.color.array;
+    // sCol ikke brugt — farver er faste fra init
     for (let i = 0; i < STREAM_TOTAL; i++) {
       const i3 = i * 3;
       // Fase: kontinuerlig fremrykning + per-partikel start
@@ -1331,13 +1325,10 @@ function initScene5() {
       sPos[i3 + 1] = tmpOut[1] + wy;
       sPos[i3 + 2] = tmpOut[2] + wz;
 
-      // Farve: guld (t=0) → rosa (t=1)
-      sCol[i3]     = colStreamStart.r + (colStreamEnd.r - colStreamStart.r) * t;
-      sCol[i3 + 1] = colStreamStart.g + (colStreamEnd.g - colStreamStart.g) * t;
-      sCol[i3 + 2] = colStreamStart.b + (colStreamEnd.b - colStreamStart.b) * t;
+      // Farver bevares fra init (hele paletten)
     }
     streamGeo.attributes.position.needsUpdate = true;
-    streamGeo.attributes.color.needsUpdate = true;
+    // streamGeo farver er faste — ingen color update
 
     // ---- HÆNDER: blid åndende glød ----
     const handBreath = 1 + Math.sin(elapsed * 0.7) * 0.07;
@@ -1380,17 +1371,17 @@ function initScene5() {
                           glimter stille som grundlag
    ============================================================ */
 function initScene6() {
-  const ctx = initScene('scene6', 45, 12);
+  const ctx = initScene('scene6', 45, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, -0.1, 5.5);
 
   // ---- Timing ----
-  const DROP_STARTS     = [0.0, 0.7, 1.4]; // sekventiel tænding
-  const DROP_FALL_DUR   = 1.6;             // rolig, blød tænding
-  const SPROUT_START    = 3.6;             // starter efter dråberne har hvilet
-  const SPROUT_DURATION = 5.4;             // langsom blomstring
+  const DROP_STARTS     = [0.0, 1.5, 3.0]; // sekventiel tænding over 0-6s
+  const DROP_FALL_DUR   = 2.0;             // rolig, blød tænding
+  const SPROUT_START    = 6.0;             // søjler rejser sig fra 6s
+  const SPROUT_DURATION = 4.0;             // blomstring over 6-10s
 
   // De tre dråber hviler tæt sammen i en blid trekant — xin's grundlag
   const dropAnchors = [
@@ -1616,7 +1607,19 @@ function initScene6() {
     }
     sproutGeo.attributes.position.needsUpdate = true;
 
-    // ---- Meget blid, harmonisk rotation ----
+    // ---- Pulsering af hele illustrationen 10-14s ----
+    if (elapsed > 10) {
+      const pulseT = elapsed * (50 / 60);
+      const pBeat = Math.pow(Math.max(0, Math.sin(pulseT * Math.PI * 2)), 3);
+      const allPulse = 1 + pBeat * 0.035;
+      dropMesh.scale.set(allPulse, allPulse, allPulse);
+      sproutMesh.scale.set(allPulse, allPulse, allPulse);
+    } else {
+      dropMesh.scale.set(1, 1, 1);
+      sproutMesh.scale.set(1, 1, 1);
+    }
+
+    // Meget blid rotation
     const rotDecay = Math.max(0, 1 - Math.max(0, (elapsed - 8)) / 2);
     dropMesh.rotation.y = Math.sin(elapsed * 0.12) * 0.08 * rotDecay;
     sproutMesh.rotation.y = dropMesh.rotation.y;
@@ -1642,7 +1645,7 @@ function initScene6() {
      8.5 – 10s   ÉT HJERTE: et stort mosaik-hjerte pulserer i ro
    ============================================================ */
 function initScene7() {
-  const ctx = initScene('scene7', 50, 12);
+  const ctx = initScene('scene7', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1790,10 +1793,10 @@ function initScene7() {
     const beatStart = T_MERGE_END;
     let pulse = 1;
     if (elapsed > beatStart) {
-      const beatT = (elapsed - beatStart) * (58 / 60);
+      const beatT = (elapsed - beatStart) * (50 / 60);
       const beat  = Math.pow(Math.max(0, Math.sin(beatT * Math.PI * 2)),     3);
-      const beat2 = Math.pow(Math.max(0, Math.sin((beatT + 0.17) * Math.PI * 2)), 5) * 0.55;
-      pulse = 1 + (beat + beat2) * 0.06;
+      const beat2 = Math.pow(Math.max(0, Math.sin((beatT + 0.18) * Math.PI * 2)), 5) * 0.55;
+      pulse = 1 + (beat + beat2) * 0.04;
     }
 
     for (let i = 0; i < COUNT; i++) {
@@ -1853,7 +1856,7 @@ function initScene7() {
    fuldt, pulser det stille.
    ============================================================ */
 function initScene8() {
-  const ctx = initScene('scene8', 50, 12);
+  const ctx = initScene('scene8', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
