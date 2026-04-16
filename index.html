@@ -29,10 +29,43 @@
     --warm-grey: #8a7e76;
     --ink: #2a1a1a;
 
+    --bg: var(--creme);
+    --bg-deep: var(--creme-deep);
+    --text: var(--ink);
+    --text-muted: var(--warm-grey);
+    --heading: var(--bordeaux);
+    --accent: var(--guld);
+    --card-bg-start: var(--bordeaux);
+    --card-bg-end: var(--bordeaux-deep);
+    --card-text: var(--creme);
+
     --serif: 'Cormorant Garamond', 'Cormorant Garant', Georgia, serif;
     --sans: 'Instrument Sans', -apple-system, system-ui, sans-serif;
 
     --measure: 720px;
+  }
+
+  [data-theme="dark"] {
+    --creme: #181016;
+    --creme-deep: #221519;
+    --bordeaux: #e0a8b2;
+    --bordeaux-deep: #2a1820;
+    --guld: #d4bb82;
+    --guld-light: #e0c98e;
+    --rosa: #e0a8b2;
+    --rosa-light: #c88a95;
+    --warm-grey: #9a8a82;
+    --ink: #efe5d3;
+
+    --bg: #181016;
+    --bg-deep: #221519;
+    --text: #efe5d3;
+    --text-muted: #9a8a82;
+    --heading: #e0a8b2;
+    --accent: #d4bb82;
+    --card-bg-start: #2a1820;
+    --card-bg-end: #3a2028;
+    --card-text: #efe5d3;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,12 +73,13 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background: var(--creme);
-    color: var(--ink);
+    background: var(--bg);
+    color: var(--text);
     font-family: var(--serif);
     font-weight: 400;
     font-size: 20px;
     line-height: 1.7;
+    transition: background 0.4s ease, color 0.4s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -62,6 +96,10 @@
     min-height: 640px;
     overflow: hidden;
     background: linear-gradient(180deg, #efe6d6 0%, var(--creme) 55%, #ead9c5 100%);
+    transition: background 0.4s ease;
+  }
+  [data-theme="dark"] .hero {
+    background: linear-gradient(180deg, #241820 0%, var(--creme) 55%, #1a1218 100%);
   }
 
   .hero-canvas {
@@ -77,6 +115,9 @@
     inset: 0;
     background: radial-gradient(ellipse at center, rgba(245,239,230,0) 0%, rgba(245,239,230,0.35) 70%, rgba(237,228,212,0.65) 100%);
     pointer-events: none;
+  }
+  [data-theme="dark"] .hero-overlay {
+    background: radial-gradient(ellipse at center, rgba(24,16,22,0) 0%, rgba(24,16,22,0.35) 70%, rgba(24,16,22,0.65) 100%);
   }
 
   .hero-content {
@@ -449,6 +490,33 @@
   }
 
   /* ---------- NAVIGATION ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(245,239,230,0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(196,162,101,0.25);
+    color: var(--heading);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+  }
+  [data-theme="dark"] .theme-toggle {
+    background: rgba(24,16,22,0.82);
+    border-color: rgba(212,187,130,0.3);
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
   .screen-nav {
     position: fixed;
     bottom: 0;
@@ -463,13 +531,18 @@
     justify-content: center;
     gap: 2rem;
     z-index: 100;
+    transition: background 0.4s;
+  }
+  [data-theme="dark"] .screen-nav {
+    background: rgba(24,16,22,0.92);
+    border-top-color: rgba(212,187,130,0.18);
   }
   .screen-nav a {
     font-family: var(--sans);
     font-size: 0.72rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--warm-grey);
+    color: var(--text-muted);
     text-decoration: none;
     transition: color 0.3s;
   }
@@ -560,9 +633,37 @@
     font-family: var(--serif);
     font-size: 1.3rem;
     font-style: italic;
-    color: var(--bordeaux);
+    color: var(--heading);
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+  .reflections-export {
+    display: flex;
+    justify-content: center;
+    gap: 0.8rem;
+    margin-bottom: 2.5rem;
+  }
+  .reflections-export button {
+    font-family: var(--sans);
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--heading);
+    background: none;
+    border: 1px solid var(--accent);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: background 0.3s, color 0.3s;
+  }
+  .reflections-export button:hover {
+    background: var(--heading);
+    color: var(--bg);
+  }
+  .reflections-export button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
   }
   .reflection-entry {
     margin-bottom: 1.8rem;
@@ -1125,6 +1226,10 @@
       <section class="section closing">
         <div class="reflections-overview" id="reflectionsOverview">
           <h3>Dine gemte refleksioner</h3>
+          <div class="reflections-export">
+            <button type="button" id="exportDownload" disabled>Download som tekst</button>
+            <button type="button" id="exportEmail" disabled>Send til mig selv</button>
+          </div>
           <div id="reflectionsList">
             <p class="reflection-empty">Du har endnu ikke gemt nogen refleksioner.</p>
           </div>
@@ -1344,6 +1449,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="scenes.js?v=12"></script>
 
+  <button class="theme-toggle" id="themeToggle" aria-label="Skift tema" title="Skift tema">☽</button>
+
   <nav class="screen-nav">
     <a href="#veje" data-nav="veje">Hjertets veje</a>
     <a href="#embryologi" data-nav="embryologi">Embryologi</a>
@@ -1352,6 +1459,31 @@
   </nav>
 
   <script>
+  // Dark mode toggle
+  (function() {
+    var THEME_KEY = 'hjertets-veje-theme';
+    var toggle = document.getElementById('themeToggle');
+    var saved = localStorage.getItem(THEME_KEY);
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var initial = saved || (prefersDark ? 'dark' : 'light');
+    function apply(theme) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggle.textContent = '☀';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        toggle.textContent = '☽';
+      }
+    }
+    apply(initial);
+    toggle.addEventListener('click', function() {
+      var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      var next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, next);
+      apply(next);
+    });
+  })();
+
   // Screen navigation — robust, scroll-to-top, scroll-reveal fix
   (function() {
     var screens = document.querySelectorAll('.screen');
@@ -1435,10 +1567,8 @@
       localStorage.setItem(KEY, JSON.stringify(data));
     }
 
-    function renderOverview() {
+    function collectEntries() {
       var data = getData();
-      var list = document.getElementById('reflectionsList');
-      if (!list) return;
       var entries = [];
       Object.keys(data).forEach(function(qId) {
         var arr = data[qId];
@@ -1447,8 +1577,18 @@
           entries.push({ qId: qId, text: entry.text, date: entry.date });
         });
       });
-      // Sortér nyeste først
       entries.sort(function(a, b) { return b.date.localeCompare(a.date); });
+      return entries;
+    }
+
+    function renderOverview() {
+      var entries = collectEntries();
+      var list = document.getElementById('reflectionsList');
+      var dlBtn = document.getElementById('exportDownload');
+      var emBtn = document.getElementById('exportEmail');
+      if (dlBtn) dlBtn.disabled = entries.length === 0;
+      if (emBtn) emBtn.disabled = entries.length === 0;
+      if (!list) return;
       if (entries.length === 0) {
         list.innerHTML = '<p class="reflection-empty">Du har endnu ikke gemt nogen refleksioner.</p>';
         return;
@@ -1465,6 +1605,60 @@
         html += '</div>';
       });
       list.innerHTML = html;
+    }
+
+    function formatExportText() {
+      var entries = collectEntries();
+      var today = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+      var lines = [];
+      lines.push('HJERTETS VEJE — dine refleksioner');
+      lines.push('Eksporteret ' + today);
+      lines.push('');
+      lines.push('—'.repeat(50));
+      lines.push('');
+      entries.forEach(function(e) {
+        var d = new Date(e.date);
+        var dateStr = d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+        var timeStr = d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+        lines.push(dateStr + ' · ' + timeStr);
+        lines.push('');
+        lines.push(questions[e.qId] || 'Spørgsmål ' + e.qId);
+        lines.push('');
+        lines.push(e.text);
+        lines.push('');
+        lines.push('—'.repeat(50));
+        lines.push('');
+      });
+      return lines.join('\n');
+    }
+
+    // Download som tekstfil
+    var dlBtn = document.getElementById('exportDownload');
+    if (dlBtn) {
+      dlBtn.addEventListener('click', function() {
+        var text = formatExportText();
+        var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var today = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = 'hjertets-veje-refleksioner-' + today + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      });
+    }
+
+    // Send som email — åbn mail-klient med pre-filled body
+    var emBtn = document.getElementById('exportEmail');
+    if (emBtn) {
+      emBtn.addEventListener('click', function() {
+        var text = formatExportText();
+        var subject = encodeURIComponent('Mine refleksioner fra Hjertets Veje');
+        var body = encodeURIComponent(text);
+        window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+      });
     }
 
     // Gem-knap handler
