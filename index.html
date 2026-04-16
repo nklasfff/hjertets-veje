@@ -521,6 +521,19 @@
     outline: none;
   }
   .reflection-textarea:focus { border-bottom-color: var(--bordeaux); }
+  .reflection-saved {
+    font-family: var(--sans);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--guld);
+    text-align: right;
+    margin-top: 0.4rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    height: 1.2em;
+  }
+  .reflection-saved.show { opacity: 1; }
   .reflection-note {
     font-family: var(--sans);
     font-size: 0.7rem;
@@ -987,42 +1000,50 @@
 
       <section class="section">
         <p class="reflection-prompt">Hvor i din krop mærker du dit hjerte lige nu? Ikke pulsen, men tilstedeværelsen. Er der et sted, hvor det er lukket? Et sted, hvor det er åbent?</p>
-        <textarea class="reflection-textarea" data-reflection="1" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="1" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Tænk på et menneske, der har lært dit hjerte noget. Ikke nødvendigvis gennem kærlighed. Måske gennem tab. Hvad var det, det menneske lærte dig?</p>
-        <textarea class="reflection-textarea" data-reflection="2" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="2" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Hvornår har du sidst mærket overgivelse? Ikke som opgivelse, men som den bevægelse, hvor du holdt op med at kæmpe. Hvad gav sig i dig dengang?</p>
-        <textarea class="reflection-textarea" data-reflection="3" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="3" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Når du tænker på det fælles hjerte, ikke som idé, men som noget du har mærket, hvornår har du sidst stået i det? Med hvem? I hvilket rum?</p>
-        <textarea class="reflection-textarea" data-reflection="4" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="4" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Hvad er dit hjerte træt af? Og hvad længes det efter?</p>
-        <textarea class="reflection-textarea" data-reflection="5" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="5" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Hvis stilheden i dig kunne tale, hvad tror du, den ville sige? Skriv det første, der kommer. Også hvis det ingen mening giver.</p>
-        <textarea class="reflection-textarea" data-reflection="6" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="6" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Forestil dig, at dit hjerte kunne vælge én ting at give slip på i dag. Hvad ville det være?</p>
-        <textarea class="reflection-textarea" data-reflection="7" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="7" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <section class="section">
         <p class="reflection-prompt">Og hvis dit hjerte kunne byde én ting velkommen i dag, hvad ville det så være?</p>
-        <textarea class="reflection-textarea" data-reflection="12" rows="4"></textarea>
+        <textarea class="reflection-textarea" aria-label="Din refleksion" data-reflection="12" rows="4"></textarea>
+        <div class="reflection-saved">Gemt</div>
       </section>
 
       <div class="divider"></div>
@@ -1031,7 +1052,7 @@
         <div class="body-text">
           <p>Disse spørgsmål har ingen ende. De er ikke til at besvare, de er til at bære med sig. Skriv, når noget melder sig. Lad det hvile, når det tier. Det vigtigste er ikke ordene, du finder, men den stilhed, der opstår, mens du giver dem lov til at bevæge sig af sig selv.</p>
         </div>
-        <p class="reflection-note">Dine ord gemmes kun i denne browser</p>
+        <p class="reflection-note">Dine refleksioner gemmes automatisk i appen</p>
       </section>
 
     </div>
@@ -1319,13 +1340,18 @@
     handleHashChange();
   })();
 
-  // Rejse localStorage
+  // Rejse localStorage med synlig gem-bekræftelse
   (function() {
     var KEY = 'hjertets-veje-rejse';
-    function save(id, text) {
+    function save(id, text, indicator) {
       var data = JSON.parse(localStorage.getItem(KEY) || '{}');
       data[id] = text;
       localStorage.setItem(KEY, JSON.stringify(data));
+      // Vis "Gemt" bekræftelse
+      if (indicator) {
+        indicator.classList.add('show');
+        setTimeout(function() { indicator.classList.remove('show'); }, 1500);
+      }
     }
     function load() {
       var data = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -1335,9 +1361,10 @@
     }
     document.querySelectorAll('textarea[data-reflection]').forEach(function(t) {
       var timer;
+      var indicator = t.nextElementSibling; // .reflection-saved div
       t.addEventListener('input', function() {
         clearTimeout(timer);
-        timer = setTimeout(function() { save(t.dataset.reflection, t.value); }, 500);
+        timer = setTimeout(function() { save(t.dataset.reflection, t.value, indicator); }, 500);
       });
     });
     load();
