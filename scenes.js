@@ -1935,7 +1935,7 @@ function initScene7() {
    fuldt, pulser det stille.
    ============================================================ */
 function initScene8() {
-  const ctx = initScene('scene8', 50, 14);
+  const ctx = initScene('scene8', 50, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -2006,8 +2006,8 @@ function initScene8() {
       positions[i3]     = basePos[i3];
       positions[i3 + 1] = -10;
       positions[i3 + 2] = basePos[i3 + 2];
-      // Appear time: centrum først (fill~0), kant sidst (fill~1)
-      fillAppearAt[i] = fill * 6.5 + Math.random() * 1.5;
+      // Appear time: centrum først (fill~0), kant sidst (fill~1) — fyldt på 5s
+      fillAppearAt[i] = fill * 4.0 + Math.random() * 1.0;
       // Tilfældig paletfarve
       const c = new THREE.Color(PAL[Math.floor(Math.random() * PAL.length)]);
       const br = 0.85 + Math.random() * 0.2;
@@ -2058,7 +2058,7 @@ function initScene8() {
     // 50 BPM puls
     const beatPhase = elapsed * (50 / 60);
     const beat = Math.pow(Math.max(0, Math.sin(beatPhase * Math.PI * 2)), 3);
-    const pulseScale = elapsed > 8.0 ? 1 + beat * 0.04 : 1 + Math.sin(elapsed * 0.8) * 0.012;
+    const pulseScale = elapsed > 5.0 ? 1 + beat * 0.04 : 1 + Math.sin(elapsed * 0.8) * 0.012;
 
     for (let i = 0; i < TOTAL; i++) {
       const i3 = i * 3;
