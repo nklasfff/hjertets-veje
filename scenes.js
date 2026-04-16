@@ -2073,9 +2073,9 @@ function initScene8() {
    SCENE: EMBRYOLOGI — celler der vandrer ind og samler sig
    ============================================================ */
 function initEmbryoScene() {
-  /* Bevægelse der ER form. 8 strømme af partikler i toroidale
-     baner — væske-dynamikker der krydser hinanden og skaber
-     metaboliske felter. "Vi er bevægelse der har antaget form." */
+  /* Fostrets skabelse som dynamisk morph. Formen forvandler sig
+     kontinuerligt: kaos → sfære → rør → C-foldning → organisk
+     form → kaos. Hele processen roterer i alle planer. */
   const ctx = initScene('embryoScene', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
@@ -2084,60 +2084,109 @@ function initEmbryoScene() {
   state.baseZ = 5;
   state.updateCamera();
 
-  const STREAMS = 8;
-  const PER = 250;
-  const COUNT = STREAMS * PER;
-
+  const COUNT = 2000;
   const positions = new Float32Array(COUNT * 3);
   const colors    = new Float32Array(COUNT * 3);
-  const streamIdx = new Int8Array(COUNT);
-  const particleU = new Float32Array(COUNT);
-  const particleV = new Float32Array(COUNT);
+  // Per partikel: parametriske coords (u=0-1 langs, v=0-2π rundt)
+  const pU = new Float32Array(COUNT);
+  const pV = new Float32Array(COUNT);
+  const jitter = new Float32Array(COUNT * 3);
+  // 5 formationer: scattered, sphere, tube, c-bend, folded
+  const scattered = new Float32Array(COUNT * 3);
 
-  // 8 strømme med forskellige toroidale baner, hastigheder, tilts
-  const streams = [];
-  for (let s = 0; s < STREAMS; s++) {
-    const tilt = (s / STREAMS) * Math.PI;
-    streams.push({
-      R: 1.1 + Math.sin(s * 1.4) * 0.35,
-      r: 0.28 + Math.cos(s * 0.8) * 0.12,
-      tiltX: Math.sin(tilt) * 0.7,
-      tiltZ: Math.cos(tilt) * 0.5,
-      speed: 0.18 + (s % 4) * 0.04,
-      phase: s * Math.PI * 2 / STREAMS,
-    });
+  const pal = [PALETTE.rosaLight,PALETTE.guld,PALETTE.bordeaux,PALETTE.rosa,
+               PALETTE.guldLight,PALETTE.amber,PALETTE.sand,PALETTE.koral];
+
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    pU[i] = Math.random();
+    pV[i] = Math.random() * Math.PI * 2;
+    jitter[i3]   = (Math.random()-0.5)*0.06;
+    jitter[i3+1] = (Math.random()-0.5)*0.06;
+    jitter[i3+2] = (Math.random()-0.5)*0.04;
+    // Spredt startposition
+    scattered[i3]   = (Math.random()-0.5)*6;
+    scattered[i3+1] = (Math.random()-0.5)*5;
+    scattered[i3+2] = (Math.random()-0.5)*3;
+    positions[i3]=scattered[i3]; positions[i3+1]=scattered[i3+1]; positions[i3+2]=scattered[i3+2];
+    const c = new THREE.Color(pal[Math.floor(Math.random()*pal.length)]);
+    const br = 0.8 + Math.random()*0.25;
+    colors[i3]=c.r*br; colors[i3+1]=c.g*br; colors[i3+2]=c.b*br;
   }
-
-  const pal = [PALETTE.rosaLight,PALETTE.guld,PALETTE.bordeaux,PALETTE.rosa,PALETTE.guldLight,PALETTE.creme,PALETTE.amber,PALETTE.sand];
-
-  for (let s = 0; s < STREAMS; s++) {
-    const col = new THREE.Color(pal[s % pal.length]);
-    for (let p = 0; p < PER; p++) {
-      const i = s * PER + p;
-      const i3 = i * 3;
-      streamIdx[i] = s;
-      particleU[i] = (p / PER) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
-      particleV[i] = Math.random() * Math.PI * 2;
-      positions[i3] = (Math.random() - 0.5) * 7;
-      positions[i3+1] = (Math.random() - 0.5) * 5;
-      positions[i3+2] = (Math.random() - 0.5) * 3;
-      const br = 0.8 + Math.random() * 0.25;
-      colors[i3] = col.r*br; colors[i3+1] = col.g*br; colors[i3+2] = col.b*br;
-    }
-  }
-
-  const startPos = new Float32Array(positions);
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   const mat = new THREE.PointsMaterial({
     size: 0.08, map: softCircleTexture(), vertexColors: true,
-    transparent: true, opacity: 0.88, sizeAttenuation: true,
+    transparent: true, opacity: 0.9, sizeAttenuation: true,
     depthWrite: false, blending: THREE.NormalBlending,
   });
   const points = new THREE.Points(geo, mat);
   scene.add(points);
+
+  // Beregn en form baseret på (u, v, jitter) og en morph-parameter
+  function computeShape(u, v, jx, jy, jz, shape) {
+    // shape 0: sfære, 1: rør, 2: C-bøjning, 3: foldet organisk
+    const tubeR = 0.32;
+    if (shape <= 0) {
+      // Sfære: radius 1.3
+      const phi = Math.acos(2*u - 1);
+      return {
+        x: 1.3*Math.sin(phi)*Math.cos(v) + jx,
+        y: 1.3*Math.sin(phi)*Math.sin(v) + jy,
+        z: 1.3*Math.cos(phi) + jz
+      };
+    } else if (shape <= 1) {
+      // Rør langs Y: højde 3, radius 0.32
+      const s = shape; // 0→1 blend
+      const phi = Math.acos(2*u - 1);
+      const sphX = 1.3*Math.sin(phi)*Math.cos(v);
+      const sphY = 1.3*Math.sin(phi)*Math.sin(v);
+      const sphZ = 1.3*Math.cos(phi);
+      const tubX = tubeR*Math.cos(v);
+      const tubY = (u-0.5)*3;
+      const tubZ = tubeR*Math.sin(v);
+      return {
+        x: sphX*(1-s) + tubX*s + jx,
+        y: sphY*(1-s) + tubY*s + jy,
+        z: sphZ*(1-s) + tubZ*s + jz
+      };
+    } else if (shape <= 2) {
+      // C-bøjning: røret buet i XY-plan
+      const s = shape - 1; // 0→1
+      const straightY = (u-0.5)*3;
+      const straightX = tubeR*Math.cos(v);
+      const straightZ = tubeR*Math.sin(v);
+      // Bue: u mapper til vinkel 0→π
+      const bendAngle = u * Math.PI * s;
+      const bendR = 1.0;
+      const curveX = Math.sin(bendAngle)*bendR*s + straightX*(1-s*0.4);
+      const curveY = -Math.cos(bendAngle)*bendR*s + straightY*(1-s);
+      return {
+        x: curveX + jx,
+        y: curveY + jy,
+        z: straightZ + jz
+      };
+    } else {
+      // Foldet organisk: C med twist og z-udbredelse
+      const s = Math.min(shape - 2, 1); // 0→1
+      const bendAngle = u * Math.PI;
+      const bendR = 1.0;
+      const baseX = Math.sin(bendAngle)*bendR;
+      const baseY = -Math.cos(bendAngle)*bendR;
+      // Twist: drejer tværsnittet langs kurven
+      const twist = u * Math.PI * 1.5 * s;
+      const tvx = tubeR * Math.cos(v + twist);
+      const tvz = tubeR * Math.sin(v + twist);
+      // Udvid: formen vokser i z
+      return {
+        x: baseX + tvx*(1+s*0.4) + jx,
+        y: baseY + jy,
+        z: tvz*(1+s*0.8) + Math.sin(u*Math.PI*2)*0.3*s + jz
+      };
+    }
+  }
 
   function animate() {
     requestAnimationFrame(animate);
@@ -2145,45 +2194,41 @@ function initEmbryoScene() {
     const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
-    // Organisering: 0-4s kaos→strømme, 4-14s strømmende form
-    const orgT = easeInOutQuad(Math.min(1, elapsed / 4));
-    // Åndedræt i den levende form
-    const breath = 1 + Math.sin(elapsed * Math.PI * 2 / 8) * 0.04;
+    // Faserne morphor kontinuerligt:
+    // 0-2s: kaos → sfære
+    // 2-5s: sfære → rør (shape 0→1)
+    // 5-8s: rør → C-bøjning (shape 1→2)
+    // 8-11s: C → foldet organisk (shape 2→3)
+    // 11-14s: foldet → kaos (dissolve)
+    let shape, chaosBlend = 0;
+    if (elapsed < 2) {
+      shape = 0; chaosBlend = 1 - easeOutCubic(elapsed / 2);
+    } else if (elapsed < 5) {
+      shape = easeInOutQuad((elapsed - 2) / 3);
+    } else if (elapsed < 8) {
+      shape = 1 + easeInOutQuad((elapsed - 5) / 3);
+    } else if (elapsed < 11) {
+      shape = 2 + easeInOutQuad((elapsed - 8) / 3);
+    } else {
+      shape = 3; chaosBlend = easeInOutQuad((elapsed - 11) / 3);
+    }
 
     for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
-      const s = streamIdx[i];
-      const st = streams[s];
-
-      // Strøm-position: toroidal bane der konstant bevæger sig
-      const u = particleU[i] + elapsed * st.speed;
-      const v = particleV[i];
-      const R = st.R * breath;
-      const r = st.r;
-
-      // Torus-coords med tilt
-      let tx = (R + r * Math.cos(v)) * Math.cos(u);
-      let ty = (R + r * Math.cos(v)) * Math.sin(u);
-      let tz = r * Math.sin(v);
-      // Tilt strømmen
-      const cosT = Math.cos(st.tiltX), sinT = Math.sin(st.tiltX);
-      const ry = ty * cosT - tz * sinT;
-      const rz = ty * sinT + tz * cosT;
-      ty = ry; tz = rz;
-      const cosZ = Math.cos(st.tiltZ), sinZ = Math.sin(st.tiltZ);
-      const rx = tx * cosZ - ty * sinZ;
-      const ry2 = tx * sinZ + ty * cosZ;
-      tx = rx; ty = ry2;
-
-      // Blend fra kaotisk start til strømmende form
-      pos[i3]     = startPos[i3]     * (1 - orgT) + tx * orgT;
-      pos[i3 + 1] = startPos[i3 + 1] * (1 - orgT) + ty * orgT;
-      pos[i3 + 2] = startPos[i3 + 2] * (1 - orgT) + tz * orgT;
+      const p = computeShape(pU[i], pV[i], jitter[i3], jitter[i3+1], jitter[i3+2], shape);
+      pos[i3]     = p.x*(1-chaosBlend) + scattered[i3]*chaosBlend;
+      pos[i3+1]   = p.y*(1-chaosBlend) + scattered[i3+1]*chaosBlend;
+      pos[i3+2]   = p.z*(1-chaosBlend) + scattered[i3+2]*chaosBlend;
     }
 
     geo.attributes.position.needsUpdate = true;
-    points.rotation.y = Math.sin(elapsed * 0.1) * 0.2;
-    points.rotation.x = Math.sin(elapsed * 0.07 + 0.5) * 0.12;
+
+    // Aktiv rotation i alle planer — stærkere under morph
+    const morphAct = 1 - chaosBlend * 0.5;
+    points.rotation.y += 0.004 * morphAct;
+    points.rotation.x = Math.sin(elapsed * 0.18) * 0.3 * morphAct;
+    points.rotation.z = Math.sin(elapsed * 0.13 + 0.7) * 0.15 * morphAct;
+
     renderer.render(scene, camera);
   }
   animate();
