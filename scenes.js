@@ -753,18 +753,40 @@ function initScene3() {
     phases[i] = Math.random() * Math.PI * 2;
   }
 
+  // Per-partikel farver: grå i fase 1, alle paletfarver i fase 3
+  const colors = new Float32Array(COUNT * 3);
+  const greyCol = new THREE.Color(0x4a4458);
+  // Precompute target farve per partikel (alle paletfarver)
+  const PAL3 = [0x6b2737,0xc4a265,0xb8707a,0x4a7a8a,0x2a3a5a,0x7a6a8a,0x6a9a7a,0xd4a070,0xd4a0a8,0xe0b060];
+  const targetColors = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    // Start grå
+    const br = 0.85 + Math.random() * 0.2;
+    colors[i3]     = greyCol.r * br;
+    colors[i3 + 1] = greyCol.g * br;
+    colors[i3 + 2] = greyCol.b * br;
+    // Target: tilfældig paletfarve
+    const tc = new THREE.Color(PAL3[Math.floor(Math.random() * PAL3.length)]);
+    const tbr = 0.85 + Math.random() * 0.2;
+    targetColors[i3]     = tc.r * tbr;
+    targetColors[i3 + 1] = tc.g * tbr;
+    targetColors[i3 + 2] = tc.b * tbr;
+  }
+
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
 
   const mat = new THREE.PointsMaterial({
     size: 0.11,
     map: softCircleTexture(),
+    vertexColors: true,
     transparent: true,
     opacity: 0.92,
     sizeAttenuation: true,
     depthWrite: false,
     blending: THREE.NormalBlending,
-    color: 0x4a4458, // grå-indigo — dæmpet, før-livet
   });
 
   const points = new THREE.Points(geo, mat);
@@ -901,27 +923,35 @@ function initScene3() {
 
     geo.attributes.position.needsUpdate = true;
 
-    // --- Farvetint ---
+    // --- Per-vertex farvetransition ---
+    const col = geo.attributes.color.array;
+    let colorT = 0; // 0=grå, 1=alle farver
     if (elapsed < 4.0) {
-      mat.color.copy(colGrey);
+      colorT = 0;
     } else if (elapsed < 4.3) {
-      // Flash: sinuspuls mod hvid
+      // Flash: kort hvid-orange blink via mat.color multiplikator
       const ft = (elapsed - 4.0) / 0.3;
-      tmpColor.copy(colGrey).lerp(colFlash, Math.sin(ft * Math.PI));
-      mat.color.copy(tmpColor);
+      const flashAmt = Math.sin(ft * Math.PI);
+      mat.color.setRGB(1 + flashAmt * 1.5, 1 + flashAmt * 0.3, 1 - flashAmt * 0.3);
+      colorT = 0;
     } else if (elapsed < 6.0) {
-      // Eksplosion: grå → bordeaux
-      const et = (elapsed - 4.3) / 1.7;
-      tmpColor.copy(colGrey).lerp(colWarm, et);
-      mat.color.copy(tmpColor);
+      mat.color.setRGB(1, 1, 1); // nulstil multiplikator
+      colorT = (elapsed - 4.3) / 1.7 * 0.3; // langsom start af farve
     } else if (elapsed < 9.5) {
-      // Gensamling: bordeaux → guld
-      const gt = easeInOutQuad((elapsed - 6.0) / 3.5);
-      tmpColor.copy(colWarm).lerp(colAlive, gt);
-      mat.color.copy(tmpColor);
+      colorT = 0.3 + easeInOutQuad((elapsed - 6.0) / 3.5) * 0.7;
     } else {
-      mat.color.copy(colAlive);
+      colorT = 1;
     }
+    // Opdater vertex-farver: lerp fra grå til target-paletfarve
+    for (let i = 0; i < COUNT; i++) {
+      const i3 = i * 3;
+      const br = 0.85 + Math.sin(phases[i]) * 0.1;
+      col[i3]     = greyCol.r * br * (1 - colorT) + targetColors[i3]     * colorT;
+      col[i3 + 1] = greyCol.g * br * (1 - colorT) + targetColors[i3 + 1] * colorT;
+      col[i3 + 2] = greyCol.b * br * (1 - colorT) + targetColors[i3 + 2] * colorT;
+    }
+    geo.attributes.color.needsUpdate = true;
+    if (elapsed >= 4.3) mat.color.setRGB(1, 1, 1); // sikr multiplikator er neutral
 
     // --- Lynet ---
     if (elapsed >= 4.0 && elapsed < 4.3) {
