@@ -78,7 +78,7 @@ function heartPoint(t, scale) {
    state indeholder { active, startTime } — bruges af animationer.
    En IntersectionObserver tracker om containeren er synlig og
    nulstiller startTime når scenen igen kommer i view. */
-function initScene(containerId, fov) {
+function initScene(containerId, fov, loopDuration) {
   const container = document.getElementById(containerId);
   if (!container) return null;
 
@@ -99,6 +99,7 @@ function initScene(containerId, fov) {
   const state = {
     active: false,
     startTime: 0,
+    loopDuration: loopDuration || 12,
     width: width,
     height: height,
   };
@@ -130,6 +131,19 @@ function initScene(containerId, fov) {
   io.observe(container);
 
   return { scene, camera, renderer, container, state };
+}
+
+/* ---------- AUTO-LOOP HJÆLPER ----------
+   Kald i starten af animate() — returnerer elapsed og nulstiller
+   startTime automatisk når loopDuration er overskredet. */
+function loopElapsed(state) {
+  const now = performance.now();
+  let elapsed = (now - state.startTime) / 1000;
+  if (elapsed > state.loopDuration) {
+    state.startTime = now;
+    elapsed = 0;
+  }
+  return elapsed;
 }
 
 /* ---------- SCROLL-REVEAL (sektioner) ----------
@@ -276,7 +290,7 @@ function initHero() {
    i et fælles, orbiterende felt.
    ============================================================ */
 function initScene1() {
-  const ctx = initScene('scene1', 55);
+  const ctx = initScene('scene1', 55, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -367,7 +381,7 @@ function initScene1() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
     const t = Math.min(elapsed / ARRIVAL_DURATION, 1);
     const eased = easeOutCubic(t);
 
@@ -381,13 +395,13 @@ function initScene1() {
       const ty = origins[i3 + 1] + (targets[i3 + 1] - origins[i3 + 1]) * eased;
       const tz = origins[i3 + 2] + (targets[i3 + 2] - origins[i3 + 2]) * eased;
 
-      // Efter ankomst: blid svæv omkring target
+      // Efter ankomst: kollektiv ånding (expand/contract) + svæv
       const postT = Math.max(0, elapsed - ARRIVAL_DURATION);
-      const drift = eased; // fuld drift kun når næsten ankommet
-      const wob = 0.08 * drift;
-      pos[i3]     = tx + Math.sin(postT * 0.4 + phases[i])       * wob;
-      pos[i3 + 1] = ty + Math.cos(postT * 0.35 + phases[i] * 1.3) * wob;
-      pos[i3 + 2] = tz + Math.sin(postT * 0.3 + phases[i] * 0.7)  * wob;
+      const breath = eased * (1 + Math.sin(postT * 0.7) * 0.08);
+      const wob = 0.08 * eased;
+      pos[i3]     = tx * breath + Math.sin(postT * 0.4 + phases[i])       * wob;
+      pos[i3 + 1] = ty * breath + Math.cos(postT * 0.35 + phases[i] * 1.3) * wob;
+      pos[i3 + 2] = tz * breath + Math.sin(postT * 0.3 + phases[i] * 0.7)  * wob;
     }
 
     geo.attributes.position.needsUpdate = true;
@@ -418,7 +432,7 @@ function initScene1() {
    y- og x-plan — strukturen ses fra forskellige dimensioner.
    ============================================================ */
 function initScene2() {
-  const ctx = initScene('scene2', 50);
+  const ctx = initScene('scene2', 50, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -554,7 +568,7 @@ function initScene2() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
     // Fase-parametre (hver 0→1 i sin fase)
@@ -687,71 +701,54 @@ function initScene2() {
      9.0 – 10s   NY FORM:   bredere, åbnere, blid ånding, varm
    ============================================================ */
 function initScene3() {
-  const ctx = initScene('scene3', 50);
+  const ctx = initScene('scene3', 50, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
-  camera.position.set(0, 0, 5.6);
+  camera.position.set(0, 0, 5.5);
 
-  const COUNT = 1800;
-  const positions  = new Float32Array(COUNT * 3);
+  // ---- 1500 partikler i hjerteform ----
+  const COUNT = 1500;
+  const positions   = new Float32Array(COUNT * 3);
+  const heartPos1   = new Float32Array(COUNT * 3); // fase 1: gråt hjerte
+  const explodeDir  = new Float32Array(COUNT * 3); // radial eksplosionsretning
+  const heartPos2   = new Float32Array(COUNT * 3); // fase 3: nyt farverigt hjerte
+  const phases      = new Float32Array(COUNT);
 
-  const beforePos  = new Float32Array(COUNT * 3); // oprindelig sammenholdt form
-  const radialDir  = new Float32Array(COUNT * 3); // eksplosionsretning
-  const dormantPos = new Float32Array(COUNT * 3); // spredt dvaleposition
-  const afterPos   = new Float32Array(COUNT * 3); // ny åben form
-  const phases     = new Float32Array(COUNT);
-  const dormantJitter = new Float32Array(COUNT * 3); // lille drift under dvale
-
-  const SHATTER_DIST = 4.2;
+  const EXPLODE_DIST = 4.0;
 
   for (let i = 0; i < COUNT; i++) {
     const i3 = i * 3;
 
-    // --- FØR: sammenholdt oval ellipsoide 1.5 × 1.05 × 0.7 ---
-    const phi   = Math.acos(2 * Math.random() - 1);
-    const theta = Math.random() * Math.PI * 2;
-    const rr    = Math.pow(Math.random(), 0.55);
-    const bx = rr * Math.sin(phi) * Math.cos(theta) * 1.5;
-    const by = rr * Math.sin(phi) * Math.sin(theta) * 1.05;
-    const bz = rr * Math.cos(phi) * 0.7;
-    beforePos[i3]     = bx;
-    beforePos[i3 + 1] = by;
-    beforePos[i3 + 2] = bz;
+    // Hjerte 1: heartPoint med udfyldning (scale 1.8)
+    const t1 = Math.random() * Math.PI * 2;
+    const fill1 = Math.pow(Math.random(), 0.5);
+    const hp1 = heartPoint(t1, 1.8);
+    const hx = hp1.x * fill1 + (Math.random() - 0.5) * 0.08;
+    const hy = hp1.y * fill1 + (Math.random() - 0.5) * 0.08;
+    const hz = (Math.random() - 0.5) * 0.4 * fill1;
+    heartPos1[i3]     = hx;
+    heartPos1[i3 + 1] = hy;
+    heartPos1[i3 + 2] = hz;
 
-    // Radial retning for spredning
-    const len = Math.sqrt(bx * bx + by * by + bz * bz) + 0.001;
-    radialDir[i3]     = bx / len;
-    radialDir[i3 + 1] = by / len;
-    radialDir[i3 + 2] = bz / len;
+    // Radial retning fra centrum
+    const len = Math.sqrt(hx * hx + hy * hy + hz * hz) + 0.001;
+    explodeDir[i3]     = hx / len;
+    explodeDir[i3 + 1] = hy / len;
+    explodeDir[i3 + 2] = hz / len;
 
-    // --- DVALE: shatter-slutposition + lille random forskydning ---
-    // Partiklerne stopper dér hvor spredningen lander og hænger i
-    // suspension. Vi gemmer kun en lille offset per partikel —
-    // baseposition beregnes i animate som calmPos + dir*SHATTER_DIST.
-    dormantJitter[i3]     = (Math.random() - 0.5) * 0.45;
-    dormantJitter[i3 + 1] = (Math.random() - 0.5) * 0.45;
-    dormantJitter[i3 + 2] = (Math.random() - 0.5) * 0.3;
+    // Hjerte 2: lidt større (scale 2.0), ny tilfældig fordeling
+    const t2 = Math.random() * Math.PI * 2;
+    const fill2 = Math.pow(Math.random(), 0.5);
+    const hp2 = heartPoint(t2, 2.0);
+    heartPos2[i3]     = hp2.x * fill2 + (Math.random() - 0.5) * 0.08;
+    heartPos2[i3 + 1] = hp2.y * fill2 + (Math.random() - 0.5) * 0.08;
+    heartPos2[i3 + 2] = (Math.random() - 0.5) * 0.45 * fill2;
 
-    // --- NY FORM: bredere, åbnere, mere dimensional ---
-    // En bred, blidt buet skål/linse — større end "før"-formen.
-    // Fyld med bias mod centrum-mellem så formen føles fuld, ikke tom.
-    const ntheta = Math.random() * Math.PI * 2;
-    const nrBias = Math.pow(Math.random(), 0.45); // bias mod ydre
-    const nr     = nrBias * 2.5;
-    afterPos[i3]     = nr * Math.cos(ntheta) * 1.05;
-    afterPos[i3 + 1] = nr * Math.sin(ntheta) * 0.78 - 0.15;
-    afterPos[i3 + 2] = -0.14 * nr * nr + (Math.random() - 0.5) * 0.35;
-
-    // Midlertidigt — partiklen starter ved før-position
-    positions[i3]     = bx;
-    positions[i3 + 1] = by;
-    positions[i3 + 2] = bz;
-
-    // Gem dvale-baseposition (=shatter-endpos) til senere
-    dormantPos[i3]     = bx + radialDir[i3]     * SHATTER_DIST + dormantJitter[i3];
-    dormantPos[i3 + 1] = by + radialDir[i3 + 1] * SHATTER_DIST + dormantJitter[i3 + 1];
-    dormantPos[i3 + 2] = bz + radialDir[i3 + 2] * SHATTER_DIST + dormantJitter[i3 + 2];
+    // Start i fase 1 hjerteposition
+    positions[i3]     = hx;
+    positions[i3 + 1] = hy;
+    positions[i3 + 2] = hz;
 
     phases[i] = Math.random() * Math.PI * 2;
   }
@@ -760,51 +757,49 @@ function initScene3() {
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   const mat = new THREE.PointsMaterial({
-    size: 0.13,
+    size: 0.11,
     map: softCircleTexture(),
     transparent: true,
     opacity: 0.92,
     sizeAttenuation: true,
     depthWrite: false,
     blending: THREE.NormalBlending,
-    color: 0x3a2a5a, // dyb indigo — livet før
+    color: 0x4a4458, // grå-indigo — dæmpet, før-livet
   });
 
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
-  // --- Lynet: zigzag fra top til bund, gengivet som tætte partikler
-  //     langs polylinen så den læses tydeligt på cream-baggrunden ---
+  // ---- Lynet: zigzag partikler fra top til bund ----
   const LIGHTNING_SEGMENTS = 12;
-  const lightningBase = []; // [{x, y}] i 2D
+  const lightningBase = [];
   for (let i = 0; i <= LIGHTNING_SEGMENTS; i++) {
-    const t = i / LIGHTNING_SEGMENTS;
+    const lt = i / LIGHTNING_SEGMENTS;
     lightningBase.push({
-      x: (Math.random() - 0.5) * 1.8,
-      y: 3.6 - t * 7.2,
+      x: (Math.random() - 0.5) * 1.6,
+      y: 3.0 - lt * 6.0,
     });
   }
-  // Sample punkter langs alle segmenter
-  const LIGHTNING_POINTS_PER_SEG = 30;
-  const LIGHTNING_COUNT = LIGHTNING_SEGMENTS * LIGHTNING_POINTS_PER_SEG;
+  const LPT_PER_SEG = 28;
+  const LIGHTNING_COUNT = LIGHTNING_SEGMENTS * LPT_PER_SEG;
   const lightningPositions = new Float32Array(LIGHTNING_COUNT * 3);
   for (let s = 0; s < LIGHTNING_SEGMENTS; s++) {
     const a = lightningBase[s];
     const b = lightningBase[s + 1];
-    for (let p = 0; p < LIGHTNING_POINTS_PER_SEG; p++) {
-      const t = p / LIGHTNING_POINTS_PER_SEG;
-      const i3 = (s * LIGHTNING_POINTS_PER_SEG + p) * 3;
-      lightningPositions[i3]     = a.x + (b.x - a.x) * t + (Math.random() - 0.5) * 0.03;
-      lightningPositions[i3 + 1] = a.y + (b.y - a.y) * t + (Math.random() - 0.5) * 0.03;
-      lightningPositions[i3 + 2] = 0.1;
+    for (let p = 0; p < LPT_PER_SEG; p++) {
+      const lt = p / LPT_PER_SEG;
+      const idx = (s * LPT_PER_SEG + p) * 3;
+      lightningPositions[idx]     = a.x + (b.x - a.x) * lt + (Math.random() - 0.5) * 0.04;
+      lightningPositions[idx + 1] = a.y + (b.y - a.y) * lt + (Math.random() - 0.5) * 0.04;
+      lightningPositions[idx + 2] = 0.1;
     }
   }
   const lightningGeo = new THREE.BufferGeometry();
   lightningGeo.setAttribute('position', new THREE.BufferAttribute(lightningPositions, 3));
   const lightningMat = new THREE.PointsMaterial({
-    size: 0.14,
+    size: 0.13,
     map: softCircleTexture(),
-    color: 0x4a1824, // dyb bordeaux — læses som en sprække i kompositionen
+    color: 0xfff8e0,
     transparent: true,
     opacity: 0,
     sizeAttenuation: true,
@@ -814,81 +809,90 @@ function initScene3() {
   const lightning = new THREE.Points(lightningGeo, lightningMat);
   scene.add(lightning);
 
-  // ---- Farver til transitioner ----
-  const colBefore  = new THREE.Color(0x3a2a5a); // dyb indigo — livet før
-  const colFlash   = new THREE.Color(0xfff0a8); // varm hvid — lynet
-  const colDormant = new THREE.Color(0x5a5260); // drænet grå-lilla — dvale
-  const colAfter   = new THREE.Color(0xc47840); // varm gylden amber — nyt liv
+  // ---- Farver til transition ----
+  const colGrey  = new THREE.Color(0x4a4458); // fase 1: grå-indigo
+  const colFlash = new THREE.Color(0xfff8e0); // flash: varm hvid
+  const colWarm  = new THREE.Color(0x8a3040); // fase 3 start: bordeaux
+  const colAlive = new THREE.Color(0xc4a265); // fase 3 mål: guld
   const tmpColor = new THREE.Color();
 
-  // ---- Fase-timing (sekunder) ---- total 10s
-  const T_BEFORE_END  = 1.8;
-  const T_FLASH_END   = 2.1;
-  const T_SHATTER_END = 3.0;
-  const T_DORMANT_END = 5.8;
-  const T_RETURN_END  = 9.0;
-  const T_TOTAL       = 10.0;
-
   function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // ---- Fase-timing (sekunder) ---- total 12s loop
+  // 0–4s:     gråt hjerte pulser langsomt (50 BPM)
+  // 4–4.3s:   lynflash — partikler skifter mod hvid
+  // 4.3–6s:   eksplosion udad (easeOutCubic)
+  // 6–9.5s:   nyt hjerte samles (easeInOutQuad) med spiral
+  // 9.5–11s:  nyt hjerte pulser (58 BPM)
+  // 11–12s:   hvile inden loop-reset
 
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
-    // Fase-parametre
-    let shatterT = 0, dormantT = 0, returnT = 0;
-    if (elapsed < T_FLASH_END) {
-      // før + flash
-    } else if (elapsed < T_SHATTER_END) {
-      shatterT = (elapsed - T_FLASH_END) / (T_SHATTER_END - T_FLASH_END);
-    } else if (elapsed < T_DORMANT_END) {
-      shatterT = 1;
-      dormantT = (elapsed - T_SHATTER_END) / (T_DORMANT_END - T_SHATTER_END);
-    } else if (elapsed < T_RETURN_END) {
-      shatterT = 1; dormantT = 1;
-      returnT = (elapsed - T_DORMANT_END) / (T_RETURN_END - T_DORMANT_END);
-    } else {
-      shatterT = 1; dormantT = 1; returnT = 1;
-    }
-    const shatterE = 1 - Math.pow(1 - shatterT, 3); // easeOutCubic
-    const returnE  = easeInOutQuad(returnT);
+    // Hjerteslag: 50 BPM (1.2s per slag), 58 BPM (~1.034s)
+    const pulse50 = Math.sin(elapsed * (Math.PI * 2 / 1.2));
+    const pulse58 = Math.sin(elapsed * (Math.PI * 2 / 1.034));
 
     for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
       let x, y, z;
 
-      if (elapsed < T_FLASH_END) {
-        // FØR + LYN: blid ånding omkring beforePos
-        const drift = 0.05;
-        x = beforePos[i3]     + Math.sin(elapsed * 0.55 + phases[i])       * drift;
-        y = beforePos[i3 + 1] + Math.cos(elapsed * 0.48 + phases[i] * 1.3) * drift;
-        z = beforePos[i3 + 2];
-      } else if (elapsed < T_SHATTER_END) {
-        // SPREDNING: hurtig udadbevægelse
-        const d = shatterE * SHATTER_DIST;
-        x = beforePos[i3]     + radialDir[i3]     * d;
-        y = beforePos[i3 + 1] + radialDir[i3 + 1] * d;
-        z = beforePos[i3 + 2] + radialDir[i3 + 2] * d;
-      } else if (elapsed < T_DORMANT_END) {
-        // DVALE: næsten-stilstand. Minimalt drift — tiden står stille.
+      if (elapsed < 4.0) {
+        // FASE 1: Gråt hjerte med langsom puls, amplitude 0.04
+        const s = 1.0 + pulse50 * 0.04;
         const drift = 0.03;
-        x = dormantPos[i3]     + Math.sin(elapsed * 0.15 + phases[i])       * drift;
-        y = dormantPos[i3 + 1] + Math.cos(elapsed * 0.12 + phases[i] * 1.1) * drift;
-        z = dormantPos[i3 + 2];
-      } else if (elapsed < T_RETURN_END) {
-        // TILBAGEVENDEN: langsomt easeInOutQuad fra dvale → ny form
-        x = lerp(dormantPos[i3],     afterPos[i3],     returnE);
-        y = lerp(dormantPos[i3 + 1], afterPos[i3 + 1], returnE);
-        z = lerp(dormantPos[i3 + 2], afterPos[i3 + 2], returnE);
+        x = heartPos1[i3]     * s + Math.sin(elapsed * 0.4 + phases[i]) * drift;
+        y = heartPos1[i3 + 1] * s + Math.cos(elapsed * 0.35 + phases[i] * 1.2) * drift;
+        z = heartPos1[i3 + 2];
+
+      } else if (elapsed < 4.3) {
+        // FASE 2a: Flash — form holdes, farve skifter (i farveblokken)
+        const s = 1.0 + pulse50 * 0.04;
+        x = heartPos1[i3]     * s;
+        y = heartPos1[i3 + 1] * s;
+        z = heartPos1[i3 + 2];
+
+      } else if (elapsed < 6.0) {
+        // FASE 2b: Eksplosion — partikler skyder udad
+        const eT = easeOutCubic((elapsed - 4.3) / 1.7);
+        const d = eT * EXPLODE_DIST;
+        x = heartPos1[i3]     + explodeDir[i3]     * d;
+        y = heartPos1[i3 + 1] + explodeDir[i3 + 1] * d;
+        z = heartPos1[i3 + 2] + explodeDir[i3 + 2] * d;
+
+      } else if (elapsed < 9.5) {
+        // FASE 3a: Gensamling fra eksplosion til nyt hjerte
+        const gT = easeInOutQuad((elapsed - 6.0) / 3.5);
+        // Eksplosions-slutposition
+        const ex = heartPos1[i3]     + explodeDir[i3]     * EXPLODE_DIST;
+        const ey = heartPos1[i3 + 1] + explodeDir[i3 + 1] * EXPLODE_DIST;
+        const ez = heartPos1[i3 + 2] + explodeDir[i3 + 2] * EXPLODE_DIST;
+        x = lerp(ex, heartPos2[i3],     gT);
+        y = lerp(ey, heartPos2[i3 + 1], gT);
+        z = lerp(ez, heartPos2[i3 + 2], gT);
+        // Spiral under gensamling — aftager med gT
+        const spiralAmp = (1 - gT) * 0.3;
+        x += Math.sin(elapsed * 1.5 + phases[i]) * spiralAmp;
+        y += Math.cos(elapsed * 1.5 + phases[i] * 1.3) * spiralAmp;
+
+      } else if (elapsed < 11.0) {
+        // FASE 3b: Nyt hjerte pulser (58 BPM)
+        const s = 1.0 + pulse58 * 0.05;
+        const drift = 0.02;
+        x = heartPos2[i3]     * s + Math.sin(elapsed * 0.5 + phases[i]) * drift;
+        y = heartPos2[i3 + 1] * s + Math.cos(elapsed * 0.45 + phases[i] * 1.1) * drift;
+        z = heartPos2[i3 + 2];
+
       } else {
-        // NY FORM: blid ånding omkring afterPos — mere levende
-        const breath = Math.sin((elapsed - T_RETURN_END) * 0.9) * 0.04;
-        x = afterPos[i3]     * (1 + breath);
-        y = afterPos[i3 + 1] * (1 + breath);
-        z = afterPos[i3 + 2];
+        // FASE 4: Hvile — minimal bevægelse
+        const drift = 0.015;
+        x = heartPos2[i3]     + Math.sin(elapsed * 0.3 + phases[i]) * drift;
+        y = heartPos2[i3 + 1] + Math.cos(elapsed * 0.25 + phases[i] * 1.1) * drift;
+        z = heartPos2[i3 + 2];
       }
 
       pos[i3]     = x;
@@ -898,56 +902,34 @@ function initScene3() {
 
     geo.attributes.position.needsUpdate = true;
 
-    // --- Farvetint gennem faser ---
-    if (elapsed < T_BEFORE_END) {
-      mat.color.copy(colBefore);
-    } else if (elapsed < T_FLASH_END) {
-      // Flash: sinusformet pulse op til varm hvid og tilbage
-      const ft = (elapsed - T_BEFORE_END) / (T_FLASH_END - T_BEFORE_END);
-      const amount = Math.sin(ft * Math.PI);
-      tmpColor.copy(colBefore).lerp(colFlash, amount);
+    // --- Farvetint ---
+    if (elapsed < 4.0) {
+      mat.color.copy(colGrey);
+    } else if (elapsed < 4.3) {
+      // Flash: sinuspuls mod hvid
+      const ft = (elapsed - 4.0) / 0.3;
+      tmpColor.copy(colGrey).lerp(colFlash, Math.sin(ft * Math.PI));
       mat.color.copy(tmpColor);
-    } else if (elapsed < T_SHATTER_END) {
-      // Spredning: farven drænes fra indigo mod dvale-grå
-      const st = (elapsed - T_FLASH_END) / (T_SHATTER_END - T_FLASH_END);
-      tmpColor.copy(colBefore).lerp(colDormant, st);
+    } else if (elapsed < 6.0) {
+      // Eksplosion: grå → bordeaux
+      const et = (elapsed - 4.3) / 1.7;
+      tmpColor.copy(colGrey).lerp(colWarm, et);
       mat.color.copy(tmpColor);
-    } else if (elapsed < T_DORMANT_END) {
-      // Dvale: drænet farve, uændret
-      mat.color.copy(colDormant);
-    } else if (elapsed < T_RETURN_END) {
-      // Tilbagevenden: farven varmer langsomt op mod gylden amber
-      const rt = (elapsed - T_DORMANT_END) / (T_RETURN_END - T_DORMANT_END);
-      tmpColor.copy(colDormant).lerp(colAfter, easeInOutQuad(rt));
+    } else if (elapsed < 9.5) {
+      // Gensamling: bordeaux → guld
+      const gt = easeInOutQuad((elapsed - 6.0) / 3.5);
+      tmpColor.copy(colWarm).lerp(colAlive, gt);
       mat.color.copy(tmpColor);
     } else {
-      mat.color.copy(colAfter);
+      mat.color.copy(colAlive);
     }
 
     // --- Lynet ---
-    if (elapsed > T_BEFORE_END && elapsed < T_FLASH_END) {
-      const ft = (elapsed - T_BEFORE_END) / (T_FLASH_END - T_BEFORE_END);
-      lightningMat.opacity = Math.max(0, 1 - ft);
+    if (elapsed >= 4.0 && elapsed < 4.3) {
+      const ft = (elapsed - 4.0) / 0.3;
+      lightningMat.opacity = Math.max(0, 1 - ft * ft);
     } else {
       lightningMat.opacity = 0;
-    }
-
-    // --- Rotation ---
-    // Næsten ingen rotation under ro og dvale.
-    // Harmoniske rotationer i begge planer under TILBAGEVENDEN,
-    // der aftager mod 0 så den nye form lander face-on.
-    let rotAmp = 0;
-    if (elapsed >= T_DORMANT_END && elapsed < T_RETURN_END) {
-      // Sinusform: bygger op og aftager. Peaker midt i returen.
-      rotAmp = Math.sin(Math.PI * returnE);
-    }
-    points.rotation.y = Math.sin(elapsed * 0.42) * 0.85 * rotAmp;
-    points.rotation.x = Math.sin(elapsed * 0.33 + 0.7) * 0.48 * rotAmp;
-
-    if (elapsed > T_RETURN_END) {
-      const post = elapsed - T_RETURN_END;
-      points.rotation.y = Math.sin(post * 0.22) * 0.035;
-      points.rotation.x = Math.sin(post * 0.16 + 0.5) * 0.022;
     }
 
     renderer.render(scene, camera);
@@ -972,7 +954,7 @@ function initScene3() {
    og varmer op igen når de falder tilbage.
    ============================================================ */
 function initScene4() {
-  const ctx = initScene('scene4', 45);
+  const ctx = initScene('scene4', 45, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1055,7 +1037,7 @@ function initScene4() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
     const col = geo.attributes.color.array;
 
@@ -1128,7 +1110,7 @@ function initScene4() {
    Kontinuerlig tilstand (ingen faser).
    ============================================================ */
 function initScene5() {
-  const ctx = initScene('scene5', 50);
+  const ctx = initScene('scene5', 50, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1310,7 +1292,7 @@ function initScene5() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
 
     // ---- HJERTE: blid, langsom puls ----
     const beatT = elapsed * (48 / 60); // 48 BPM — meditativt tempo
@@ -1398,7 +1380,7 @@ function initScene5() {
                           glimter stille som grundlag
    ============================================================ */
 function initScene6() {
-  const ctx = initScene('scene6', 45);
+  const ctx = initScene('scene6', 45, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1465,13 +1447,13 @@ function initScene6() {
       const i = d * DROP_PER + p;
       const i3 = i * 3;
 
-      // Blød dråbeform: bredere øverst, smallere nederst, blød kant
-      const yNorm = Math.random();
-      const rMax  = 0.26 * Math.pow(yNorm + 0.1, 0.55);
+      // Naturlig dråbeform: smal top, bred bund (som en regndråbe)
+      const yNorm = Math.random(); // 0=top (smal), 1=bund (bred)
+      const rMax  = 0.26 * Math.pow(yNorm + 0.06, 0.6);
       const rr    = Math.sqrt(Math.random()) * rMax;
       const theta = Math.random() * Math.PI * 2;
       dropLocal[i3]     = rr * Math.cos(theta);
-      dropLocal[i3 + 1] = (yNorm - 0.42) * 0.85;
+      dropLocal[i3 + 1] = (0.45 - yNorm) * 0.85; // top opad, bund nedad
       dropLocal[i3 + 2] = rr * Math.sin(theta);
       dropIdx[i] = d;
       dropPhases[i] = Math.random() * Math.PI * 2;
@@ -1565,7 +1547,7 @@ function initScene6() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
 
     // ---- DRÅBER: tænder sekventielt og bliver stående som grundlag ----
     const dPos = dropGeo.attributes.position.array;
@@ -1660,7 +1642,7 @@ function initScene6() {
      8.5 – 10s   ÉT HJERTE: et stort mosaik-hjerte pulserer i ro
    ============================================================ */
 function initScene7() {
-  const ctx = initScene('scene7', 50);
+  const ctx = initScene('scene7', 50, 12);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
@@ -1693,7 +1675,7 @@ function initScene7() {
   ].map(h => new THREE.Color(h));
 
   const BIG_HEART_SCALE = 2.5; // størrelsen af det endelige fælles hjerte
-  const SMALL_HEART_SCALE = 0.55; // størrelsen af hvert lille hjerte
+  const SMALL_HEART_SCALE = 0.78; // størrelsen af hvert lille hjerte — tydeligere
 
   // Fordel 20 hjerter jævnt i et stort felt
   for (let h = 0; h < HEARTS; h++) {
@@ -1792,7 +1774,7 @@ function initScene7() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
-    const elapsed = (performance.now() - state.startTime) / 1000;
+    const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
     // Fase-parametre
@@ -1864,6 +1846,225 @@ function initScene7() {
 }
 
 /* ============================================================
+   SCENE 8 — Afslutning: "Hjertet fyldes"
+   Et hjerteomrids starter tomt. Tårer falder blødt ned.
+   Gradvist fyldes hjertet indefra med alle kursets farver —
+   et mosaik af alt, vi har gennemlevet. Når hjertet er
+   fuldt, pulser det stille.
+   ============================================================ */
+function initScene8() {
+  const ctx = initScene('scene8', 50, 12);
+  if (!ctx) return;
+  const { scene, camera, renderer, state } = ctx;
+
+  camera.position.set(0, 0, 6);
+
+  // ---- Farvepalet: alle kursets farver ----
+  const fillColors = [
+    0x6b2737, 0xc4a265, 0xb8707a, 0x4a7a8a, 0x2a3a5a,
+    0x7a6a8a, 0x6a9a7a, 0xd4a070, 0xd4a0a8, 0x8a2030,
+    0xd8c095, 0xe08878, 0x8a4838, 0x6a8858, 0xc07258,
+    0xa898c0, 0xecb090, 0xe0b060, 0xd4bb82, 0x8a7e76,
+  ];
+
+  // ---- OUTLINE: 200 partikler langs hjertekurven ----
+  const OUTLINE_COUNT = 200;
+  const outlinePos = new Float32Array(OUTLINE_COUNT * 3);
+  const outlineBase = new Float32Array(OUTLINE_COUNT * 3);
+  for (let i = 0; i < OUTLINE_COUNT; i++) {
+    const i3 = i * 3;
+    const t = (i / OUTLINE_COUNT) * Math.PI * 2;
+    const hp = heartPoint(t, 2.0);
+    outlineBase[i3]     = hp.x + (Math.random() - 0.5) * 0.06;
+    outlineBase[i3 + 1] = hp.y + (Math.random() - 0.5) * 0.06;
+    outlineBase[i3 + 2] = (Math.random() - 0.5) * 0.1;
+    outlinePos[i3]     = outlineBase[i3];
+    outlinePos[i3 + 1] = outlineBase[i3 + 1];
+    outlinePos[i3 + 2] = outlineBase[i3 + 2];
+  }
+  const outlineGeo = new THREE.BufferGeometry();
+  outlineGeo.setAttribute('position', new THREE.BufferAttribute(outlinePos, 3));
+  const outlineMat = new THREE.PointsMaterial({
+    size: 0.11,
+    map: softCircleTexture(),
+    transparent: true,
+    opacity: 0.92,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+    color: 0x6b2737, // bordeaux
+  });
+  const outlinePoints = new THREE.Points(outlineGeo, outlineMat);
+  scene.add(outlinePoints);
+
+  // ---- FILL: 1200 partikler der gradvist dukker op inde i hjertet ----
+  const FILL_COUNT = 1200;
+  const fillPos = new Float32Array(FILL_COUNT * 3);
+  const fillBase = new Float32Array(FILL_COUNT * 3);
+  const fillPhases = new Float32Array(FILL_COUNT);
+  // Hver partikel har en "appear time" fra 0–8s
+  const fillAppearAt = new Float32Array(FILL_COUNT);
+
+  // Brug vertexColors til mosaik-effekten
+  const fillColorsArr = new Float32Array(FILL_COUNT * 3);
+
+  for (let i = 0; i < FILL_COUNT; i++) {
+    const i3 = i * 3;
+    // Tilfældigt punkt inde i hjertet
+    const t = Math.random() * Math.PI * 2;
+    const fill = Math.pow(Math.random(), 0.55); // bias mod centrum
+    const hp = heartPoint(t, 1.85);
+    fillBase[i3]     = hp.x * fill + (Math.random() - 0.5) * 0.06;
+    fillBase[i3 + 1] = hp.y * fill + (Math.random() - 0.5) * 0.06;
+    fillBase[i3 + 2] = (Math.random() - 0.5) * 0.3 * fill;
+
+    // Start usynlig (langt væk)
+    fillPos[i3]     = fillBase[i3];
+    fillPos[i3 + 1] = fillBase[i3 + 1] - 8; // under synsfeltet
+    fillPos[i3 + 2] = fillBase[i3 + 2];
+
+    fillPhases[i] = Math.random() * Math.PI * 2;
+
+    // Graduel fyldning: partikler ankommer jævnt over 0–8s
+    // De mest centrale ankommer først (lavere fill = tættere på centrum)
+    fillAppearAt[i] = fill * 7.0 + Math.random() * 1.0;
+
+    // Tilfældig farve fra paletten
+    const c = new THREE.Color(fillColors[i % fillColors.length]);
+    fillColorsArr[i3]     = c.r;
+    fillColorsArr[i3 + 1] = c.g;
+    fillColorsArr[i3 + 2] = c.b;
+  }
+
+  const fillGeo = new THREE.BufferGeometry();
+  fillGeo.setAttribute('position', new THREE.BufferAttribute(fillPos, 3));
+  fillGeo.setAttribute('color', new THREE.BufferAttribute(fillColorsArr, 3));
+  const fillMat = new THREE.PointsMaterial({
+    size: 0.11,
+    map: softCircleTexture(),
+    transparent: true,
+    opacity: 0.92,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+    vertexColors: true,
+  });
+  const fillPoints = new THREE.Points(fillGeo, fillMat);
+  scene.add(fillPoints);
+
+  // ---- TEARS: 200 faldende partikler (som hero-regn, men færre) ----
+  const TEAR_COUNT = 200;
+  const tearPos = new Float32Array(TEAR_COUNT * 3);
+  const tearSpeeds = new Float32Array(TEAR_COUNT);
+  const tearPhases = new Float32Array(TEAR_COUNT);
+  // Synligt område ved z=0, fov=50, cam z=6: ~5.6 halvbredde, ~4.7 halvhøjde
+  const tearSpreadX = 7;
+  const tearSpreadY = 6;
+
+  for (let i = 0; i < TEAR_COUNT; i++) {
+    const i3 = i * 3;
+    tearPos[i3]     = (Math.random() - 0.5) * tearSpreadX * 2;
+    tearPos[i3 + 1] = Math.random() * tearSpreadY * 2 - tearSpreadY;
+    tearPos[i3 + 2] = (Math.random() - 0.5) * 1.5 - 0.5;
+    tearSpeeds[i] = 0.4 + Math.random() * 0.6;
+    tearPhases[i] = Math.random() * Math.PI * 2;
+  }
+  const tearGeo = new THREE.BufferGeometry();
+  tearGeo.setAttribute('position', new THREE.BufferAttribute(tearPos, 3));
+  const tearMat = new THREE.PointsMaterial({
+    size: 0.08,
+    map: softCircleTexture(),
+    transparent: true,
+    opacity: 0.45,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+    color: 0xc4a265, // guld tårer
+  });
+  const tearPoints = new THREE.Points(tearGeo, tearMat);
+  scene.add(tearPoints);
+
+  // ---- Animation ----
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!state.active) return;
+
+    const elapsed = loopElapsed(state);
+
+    // 58 BPM puls til fase 3
+    const pulse58 = Math.sin(elapsed * (Math.PI * 2 / 1.034));
+
+    // --- Outline: blid ånding hele tiden, stærkere puls i fase 3 ---
+    const oPos = outlineGeo.attributes.position.array;
+    const pulseAmp = elapsed > 8.0 && elapsed < 11.0 ? 0.04 : 0.015;
+    const pulseScale = elapsed > 8.0 && elapsed < 11.0
+      ? 1.0 + pulse58 * pulseAmp
+      : 1.0 + Math.sin(elapsed * 0.8) * pulseAmp;
+    for (let i = 0; i < OUTLINE_COUNT; i++) {
+      const i3 = i * 3;
+      oPos[i3]     = outlineBase[i3]     * pulseScale;
+      oPos[i3 + 1] = outlineBase[i3 + 1] * pulseScale;
+      oPos[i3 + 2] = outlineBase[i3 + 2];
+    }
+    outlineGeo.attributes.position.needsUpdate = true;
+
+    // --- Fill: partikler dukker op når elapsed >= fillAppearAt[i] ---
+    const fPos = fillGeo.attributes.position.array;
+    for (let i = 0; i < FILL_COUNT; i++) {
+      const i3 = i * 3;
+      if (elapsed < fillAppearAt[i]) {
+        // Endnu ikke synlig — hold under synsfeltet
+        fPos[i3]     = fillBase[i3];
+        fPos[i3 + 1] = fillBase[i3 + 1] - 8;
+        fPos[i3 + 2] = fillBase[i3 + 2];
+      } else {
+        // Synlig — fade ind med en lille stigning fra bunden
+        const age = elapsed - fillAppearAt[i];
+        const fadeIn = Math.min(1, age / 0.6); // 0.6s fade-in
+        const drift = 0.015;
+        const riseOffset = (1 - fadeIn) * 0.5; // stiger lidt op under fade
+        let bx = fillBase[i3]     + Math.sin(elapsed * 0.3 + fillPhases[i]) * drift;
+        let by = fillBase[i3 + 1] - riseOffset + Math.cos(elapsed * 0.25 + fillPhases[i] * 1.2) * drift;
+        let bz = fillBase[i3 + 2];
+
+        // Puls i fase 3 (8-11s)
+        if (elapsed > 8.0 && elapsed < 11.0) {
+          const s = 1.0 + pulse58 * 0.04;
+          bx *= s;
+          by *= s;
+        }
+
+        fPos[i3]     = bx;
+        fPos[i3 + 1] = by;
+        fPos[i3 + 2] = bz;
+      }
+    }
+    fillGeo.attributes.position.needsUpdate = true;
+
+    // --- Tears: faldende tårer hele tiden ---
+    const tPos = tearGeo.attributes.position.array;
+    const dt = 1 / 60; // approx
+    for (let i = 0; i < TEAR_COUNT; i++) {
+      const i3 = i * 3;
+      tPos[i3 + 1] -= tearSpeeds[i] * dt;
+      tPos[i3]     += Math.sin(elapsed * 0.5 + tearPhases[i]) * 0.002;
+      // Wrap til toppen
+      if (tPos[i3 + 1] < -tearSpreadY) {
+        tPos[i3 + 1] = tearSpreadY;
+        tPos[i3]     = (Math.random() - 0.5) * tearSpreadX * 2;
+      }
+    }
+    tearGeo.attributes.position.needsUpdate = true;
+
+    // --- Tåre-opacity: dæmpet under hvile ---
+    tearMat.opacity = elapsed > 11.0 ? 0.25 : 0.45;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+/* ============================================================
    INIT — start alt når DOM er klar
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1876,4 +2077,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initScene5();
   initScene6();
   initScene7();
+  initScene8();
 });
