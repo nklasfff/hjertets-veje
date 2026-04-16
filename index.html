@@ -371,6 +371,23 @@
     }
   }
 
+  .rejse-bg {
+    position: absolute !important;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw !important;
+    max-width: none !important;
+    height: 50vh;
+    z-index: 0;
+    opacity: 0.4;
+    pointer-events: none;
+    margin: 0 !important;
+  }
+
+  [data-screen="rejse"] .content-wrapper { position: relative; }
+  [data-screen="rejse"] .screen-header { position: relative; z-index: 1; }
+
   .three-interlude canvas {
     display: block;
     width: 100% !important;
@@ -806,6 +823,8 @@
         </div>
       </section>
 
+      <div class="three-interlude" id="embryoScene"></div>
+
       <div class="divider"></div>
 
       <!-- PRINCIP I -->
@@ -944,6 +963,8 @@
   <div class="screen" data-screen="rejse" hidden>
     <div class="content-wrapper">
 
+      <div class="three-interlude rejse-bg" id="rejseScene"></div>
+
       <div class="screen-header">
         <div class="chapter-number">En invitation</div>
         <h2 class="chapter-title">Dit hjertes rejse</h2>
@@ -1044,6 +1065,8 @@
           <p>Det, der følger, er ikke en liste over synonymer. Det er fjorten forskellige måder at forstå, hvad det vil sige at være menneske, fortalt gennem det sted, mennesker gennem tiderne har pegt på, når de ville sige <em>her er jeg</em>.</p>
         </div>
       </section>
+
+      <div class="three-interlude" id="hjerterScene"></div>
 
       <!-- sonqo -->
       <section class="section heart-entry">
@@ -1233,7 +1256,7 @@
   </div><!-- /screen:hjerter -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="scenes.js?v=9"></script>
+  <script src="scenes.js?v=10"></script>
 
   <nav class="screen-nav">
     <a href="#veje" data-nav="veje">Hjertets Veje</a>

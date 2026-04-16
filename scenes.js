@@ -2070,6 +2070,321 @@ function initScene8() {
 }
 
 /* ============================================================
+   SCENE: EMBRYOLOGI — celler der vandrer ind og samler sig
+   ============================================================ */
+function initEmbryoScene() {
+  const ctx = initScene('embryoScene', 50, 14);
+  if (!ctx) return;
+  const { scene, camera, renderer, state } = ctx;
+
+  camera.position.set(0, 0, 5);
+  state.baseZ = 5;
+  state.updateCamera();
+
+  const COUNT = 2000;
+  const positions = new Float32Array(COUNT * 3);
+  const colors = new Float32Array(COUNT * 3);
+  const phases = new Float32Array(COUNT);
+  const targetPos = new Float32Array(COUNT * 3);
+
+  var palette = [PALETTE.rosaLight, PALETTE.guld, PALETTE.bordeaux, PALETTE.creme, PALETTE.rosa, PALETTE.guldLight];
+
+  for (var i = 0; i < COUNT; i++) {
+    var i3 = i * 3;
+    positions[i3]     = (Math.random() - 0.5) * 8;
+    positions[i3 + 1] = (Math.random() - 0.5) * 6;
+    positions[i3 + 2] = (Math.random() - 0.5) * 4;
+
+    var u = Math.random() * Math.PI * 2;
+    var v = Math.random() * Math.PI * 2;
+    var R = 1.2 + Math.sin(u * 3) * 0.3 + Math.cos(v * 2) * 0.2;
+    var r = 0.5 + Math.sin(u * 2 + v) * 0.15;
+    targetPos[i3]     = (R + r * Math.cos(v)) * Math.cos(u) + (Math.random() - 0.5) * 0.15;
+    targetPos[i3 + 1] = (R + r * Math.cos(v)) * Math.sin(u) * 0.7 + (Math.random() - 0.5) * 0.15;
+    targetPos[i3 + 2] = r * Math.sin(v) * 0.8 + (Math.random() - 0.5) * 0.1;
+
+    phases[i] = Math.random() * Math.PI * 2;
+
+    var c = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
+    var br = 0.8 + Math.random() * 0.25;
+    colors[i3]     = c.r * br;
+    colors[i3 + 1] = c.g * br;
+    colors[i3 + 2] = c.b * br;
+  }
+
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  var mat = new THREE.PointsMaterial({
+    size: 0.09,
+    map: softCircleTexture(),
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.88,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+  });
+
+  var points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  var startPositions = new Float32Array(positions);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!state.active) return;
+
+    var elapsed = loopElapsed(state);
+    var pos = geo.attributes.position.array;
+
+    var gatherT = Math.min(1, elapsed / 12);
+    var gatherE = easeInOutQuad(gatherT);
+
+    var breath = gatherT >= 1 ? 1 + Math.sin((elapsed - 12) * (Math.PI * 2 / 8)) * 0.04 : 1;
+
+    for (var i = 0; i < COUNT; i++) {
+      var i3 = i * 3;
+      var startX = (Math.sin(elapsed * 0.3 + phases[i] * 3) * 0.5 + phases[i] * 1.2 - Math.PI) * (1 - gatherE * 0.7);
+      var startY = (Math.cos(elapsed * 0.25 + phases[i] * 2.5) * 0.4 + (phases[i] - Math.PI) * 0.9) * (1 - gatherE * 0.7);
+      var startZ = Math.sin(elapsed * 0.2 + phases[i] * 1.8) * 0.3 * (1 - gatherE);
+
+      var tx = targetPos[i3] * breath;
+      var ty = targetPos[i3 + 1] * breath;
+      var tz = targetPos[i3 + 2];
+
+      pos[i3]     = tx * gatherE + (startPositions[i3] * (1 - gatherE * 0.5) + startX);
+      pos[i3 + 1] = ty * gatherE + (startPositions[i3 + 1] * (1 - gatherE * 0.5) + startY);
+      pos[i3 + 2] = tz * gatherE + (startPositions[i3 + 2] * (1 - gatherE) + startZ);
+    }
+
+    geo.attributes.position.needsUpdate = true;
+
+    points.rotation.y = Math.sin(elapsed * 0.08) * 0.2;
+    points.rotation.x = Math.sin(elapsed * 0.06 + 0.5) * 0.1;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+/* ============================================================
+   SCENE: REJSE — stille baggrundsfelt af svævende partikler
+   ============================================================ */
+function initRejseScene() {
+  var ctx = initScene('rejseScene', 45, 14);
+  if (!ctx) return;
+  var scene = ctx.scene, camera = ctx.camera, renderer = ctx.renderer, state = ctx.state;
+
+  camera.position.set(0, 0, 6);
+  state.baseZ = 6;
+  state.updateCamera();
+
+  var COUNT = 1500;
+  var positions = new Float32Array(COUNT * 3);
+  var colors = new Float32Array(COUNT * 3);
+  var phases = new Float32Array(COUNT);
+
+  var palette = [PALETTE.guld, PALETTE.warmGrey, PALETTE.creme, PALETTE.rosaLight, PALETTE.guldLight];
+
+  for (var i = 0; i < COUNT; i++) {
+    var i3 = i * 3;
+    var phi = Math.acos(2 * Math.random() - 1);
+    var theta = Math.random() * Math.PI * 2;
+    var r = Math.pow(Math.random(), 0.4) * 2.5;
+    positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
+    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.6;
+    positions[i3 + 2] = r * Math.cos(phi) * 0.5;
+    phases[i] = Math.random() * Math.PI * 2;
+
+    var c = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
+    var br = 0.7 + Math.random() * 0.2;
+    colors[i3]     = c.r * br;
+    colors[i3 + 1] = c.g * br;
+    colors[i3 + 2] = c.b * br;
+  }
+
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  var mat = new THREE.PointsMaterial({
+    size: 0.08,
+    map: softCircleTexture(),
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.4,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+  });
+
+  var points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  var basePositions = new Float32Array(positions);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!state.active) return;
+
+    var elapsed = loopElapsed(state);
+    var pos = geo.attributes.position.array;
+
+    var breath = 1 + Math.sin(elapsed * (Math.PI * 2 / 15)) * 0.03;
+
+    for (var i = 0; i < COUNT; i++) {
+      var i3 = i * 3;
+      var drift = 0.02;
+      pos[i3]     = basePositions[i3]     * breath + Math.sin(elapsed * 0.15 + phases[i]) * drift;
+      pos[i3 + 1] = basePositions[i3 + 1] * breath + Math.cos(elapsed * 0.12 + phases[i] * 1.2) * drift;
+      pos[i3 + 2] = basePositions[i3 + 2] * breath;
+    }
+
+    geo.attributes.position.needsUpdate = true;
+
+    points.rotation.y = elapsed * 0.015;
+    points.rotation.x = Math.sin(elapsed * 0.04) * 0.03;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+/* ============================================================
+   SCENE: HJERTER — 14 kulturelle klynger svæver frit
+   ============================================================ */
+function initHjerterScene() {
+  var ctx = initScene('hjerterScene', 55, 14);
+  if (!ctx) return;
+  var scene = ctx.scene, camera = ctx.camera, renderer = ctx.renderer, state = ctx.state;
+
+  camera.position.set(0, 0, 7);
+  state.baseZ = 7;
+  state.updateCamera();
+
+  var CLUSTERS = 14;
+  var PER_CLUSTER = 120;
+  var COUNT = CLUSTERS * PER_CLUSTER;
+
+  var positions = new Float32Array(COUNT * 3);
+  var colors = new Float32Array(COUNT * 3);
+
+  var clusterCenters = [];
+  var clusterPhases = [];
+  var clusterDrift = [];
+
+  var palette14 = [
+    PALETTE.bordeaux, PALETTE.guld, PALETTE.rosa, PALETTE.warmGrey, PALETTE.rosaLight,
+    PALETTE.teal, PALETTE.sand, PALETTE.terracotta, PALETTE.salvie, PALETTE.amber,
+    PALETTE.lavendel, PALETTE.koral, PALETTE.honning, PALETTE.mahogni
+  ].map(function(h) { return new THREE.Color(h); });
+
+  var ms = mobileScale();
+
+  for (var c = 0; c < CLUSTERS; c++) {
+    var phi = Math.acos(1 - 2 * (c + 0.5) / CLUSTERS);
+    var theta = Math.PI * (1 + Math.sqrt(5)) * c;
+    var r = 2.5 + Math.random() * 0.5;
+    clusterCenters.push({
+      x: r * Math.sin(phi) * Math.cos(theta) * (0.7 + 0.3 * ms),
+      y: r * Math.sin(phi) * Math.sin(theta) * 0.65,
+      z: r * Math.cos(phi) * 0.4,
+    });
+    clusterPhases.push(Math.random() * Math.PI * 2);
+    clusterDrift.push({
+      dx: (Math.random() - 0.5) * 0.15,
+      dy: (Math.random() - 0.5) * 0.1,
+    });
+  }
+
+  var localOffsets = new Float32Array(COUNT * 3);
+  var particlePhases = new Float32Array(COUNT);
+
+  for (var c = 0; c < CLUSTERS; c++) {
+    var col = palette14[c];
+    var center = clusterCenters[c];
+    for (var p = 0; p < PER_CLUSTER; p++) {
+      var i = c * PER_CLUSTER + p;
+      var i3 = i * 3;
+
+      var lphi = Math.acos(2 * Math.random() - 1);
+      var ltheta = Math.random() * Math.PI * 2;
+      var lr = Math.pow(Math.random(), 0.55) * 0.45;
+      localOffsets[i3]     = lr * Math.sin(lphi) * Math.cos(ltheta);
+      localOffsets[i3 + 1] = lr * Math.sin(lphi) * Math.sin(ltheta);
+      localOffsets[i3 + 2] = lr * Math.cos(lphi);
+
+      positions[i3]     = center.x + localOffsets[i3];
+      positions[i3 + 1] = center.y + localOffsets[i3 + 1];
+      positions[i3 + 2] = center.z + localOffsets[i3 + 2];
+
+      particlePhases[i] = Math.random() * Math.PI * 2;
+
+      var br = 0.85 + Math.random() * 0.2;
+      colors[i3]     = col.r * br;
+      colors[i3 + 1] = col.g * br;
+      colors[i3 + 2] = col.b * br;
+    }
+  }
+
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  var mat = new THREE.PointsMaterial({
+    size: 0.09,
+    map: softCircleTexture(),
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.9,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+  });
+
+  var points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!state.active) return;
+
+    var elapsed = loopElapsed(state);
+    var pos = geo.attributes.position.array;
+
+    for (var c = 0; c < CLUSTERS; c++) {
+      var center = clusterCenters[c];
+      var phase = clusterPhases[c];
+      var drift = clusterDrift[c];
+
+      var cx = center.x + Math.sin(elapsed * 0.2 + phase) * drift.dx * 3;
+      var cy = center.y + Math.cos(elapsed * 0.18 + phase * 1.3) * drift.dy * 3;
+      var cz = center.z + Math.sin(elapsed * 0.15 + phase * 0.7) * 0.08;
+
+      var breath = 1 + Math.sin(elapsed * 0.4 + phase) * 0.06;
+
+      for (var p = 0; p < PER_CLUSTER; p++) {
+        var i = c * PER_CLUSTER + p;
+        var i3 = i * 3;
+        pos[i3]     = cx + localOffsets[i3]     * breath;
+        pos[i3 + 1] = cy + localOffsets[i3 + 1] * breath;
+        pos[i3 + 2] = cz + localOffsets[i3 + 2] * breath;
+      }
+    }
+
+    geo.attributes.position.needsUpdate = true;
+
+    points.rotation.y = elapsed * 0.03;
+    points.rotation.x = Math.sin(elapsed * 0.05) * 0.06;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+/* ============================================================
    INIT — start alt når DOM er klar
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -2083,4 +2398,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScene6();
   initScene7();
   initScene8();
+  initEmbryoScene();
+  initRejseScene();
+  initHjerterScene();
 });
