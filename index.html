@@ -1248,21 +1248,68 @@
   </nav>
 
   <script>
-  // Screen navigation
+  // Screen navigation — robust, scroll-to-top, scroll-reveal fix
   (function() {
     var screens = document.querySelectorAll('.screen');
     var navLinks = document.querySelectorAll('.screen-nav a');
+    var currentScreen = null;
+
     function showScreen(name) {
+      if (name === currentScreen) {
+        // Samme skærm: scroll til top
+        window.scrollTo(0, 0);
+        return;
+      }
+      currentScreen = name;
+
+      // Skjul alle, vis den valgte
       screens.forEach(function(s) { s.hidden = (s.dataset.screen !== name); });
+
+      // Opdatér nav highlights
       navLinks.forEach(function(a) { a.classList.toggle('active', a.dataset.nav === name); });
-      window.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Scroll til top — tre metoder for iOS/PWA kompatibilitet
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // Scroll-reveal: sektioner øverst på den nye skærm skal synes med det samme
+      requestAnimationFrame(function() {
+        var sections = document.querySelectorAll('.screen:not([hidden]) .section:not(.visible)');
+        sections.forEach(function(s) {
+          var rect = s.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.85) {
+            s.classList.add('visible');
+          }
+        });
+      });
     }
+
+    // Forhindre standard anchor-scroll — brug kun hash til routing
+    navLinks.forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = this.dataset.nav;
+        if (target === currentScreen) {
+          // Tryk på aktiv: scroll til top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.location.hash = target;
+        }
+      });
+    });
+
     function handleHashChange() {
       var hash = window.location.hash.slice(1) || 'veje';
       var valid = ['veje', 'embryologi', 'rejse', 'hjerter'];
       showScreen(valid.indexOf(hash) !== -1 ? hash : 'veje');
     }
+
     window.addEventListener('hashchange', handleHashChange);
+
+    // Også lyt til popstate for browser-back
+    window.addEventListener('popstate', handleHashChange);
+
     handleHashChange();
   })();
 
