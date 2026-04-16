@@ -152,6 +152,34 @@
     color: #efe5d3;
   }
 
+  /* Dark mode: boost læsbarhed for dæmpede UI-elementer */
+  [data-theme="dark"] .reflections-export button {
+    color: #efe5d3;
+    border-color: rgba(212, 187, 130, 0.55);
+  }
+  [data-theme="dark"] .reflections-export button:hover {
+    background: #d4bb82;
+    color: #181016;
+  }
+  [data-theme="dark"] .reflections-export button:disabled {
+    opacity: 0.55;
+    color: #c8b898;
+  }
+  [data-theme="dark"] .reflection-empty {
+    color: #c8b898;
+    opacity: 1;
+  }
+  [data-theme="dark"] .reflection-note {
+    color: #c8b898;
+    opacity: 1;
+  }
+  [data-theme="dark"] .reflection-entry-date {
+    color: #d4bb82;
+  }
+  [data-theme="dark"] .reflection-entry-q {
+    color: #c8b898;
+  }
+
   .hero-content {
     position: absolute;
     inset: 0;
