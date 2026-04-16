@@ -2193,9 +2193,10 @@ function initEmbryoScene() {
    SCENE: REJSE — stille baggrundsfelt af svævende partikler
    ============================================================ */
 function initRejseScene() {
-  /* En sti der bevæger sig gennem rummet. Partikler flyder
-     langs en lang, bugtende vej — ikke mod et mål, men som
-     selve bevægelsen af at gå. Abstrakt, dynamisk, stille. */
+  /* En levende, bugtende sti i alle farver. Selve stien bevæger
+     sig — kontrolpunkterne pulserer og skifter position, så vejen
+     aldrig er den samme. Partikler strømmer langs den. Imens
+     regner bløde små partikler ned gennem scenen som stille tårer. */
   const ctx = initScene('rejseScene', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
@@ -2204,27 +2205,50 @@ function initRejseScene() {
   state.baseZ = 5.5;
   state.updateCamera();
 
-  const COUNT = 1400;
+  // ---- STI-PARTIKLER: 1100 i alle farver ----
+  const PATH_COUNT = 1100;
+  // ---- REGN: 300 små faldende partikler ----
+  const RAIN_COUNT = 300;
+  const COUNT = PATH_COUNT + RAIN_COUNT;
+
   const positions = new Float32Array(COUNT * 3);
   const colors    = new Float32Array(COUNT * 3);
-  const initPhase = new Float32Array(COUNT); // 0-1 langs stien
+  const initPhase = new Float32Array(COUNT);
   const speed     = new Float32Array(COUNT);
   const wobPhase  = new Float32Array(COUNT);
+  const rainSpeed = new Float32Array(RAIN_COUNT);
 
-  const colA = new THREE.Color(PALETTE.bordeaux);
-  const colB = new THREE.Color(PALETTE.guld);
-  const colC = new THREE.Color(PALETTE.rosa);
+  // Alle farver fra hele appen
+  const PAL = [
+    PALETTE.bordeaux, PALETTE.guld, PALETTE.rosa, PALETTE.rosaLight,
+    PALETTE.teal, PALETTE.lilla, PALETTE.salvie, PALETTE.amber,
+    PALETTE.guldLight, PALETTE.honning, PALETTE.koral, PALETTE.warmGrey,
+  ].map(function(h) { return new THREE.Color(h); });
 
-  for (let i = 0; i < COUNT; i++) {
+  for (let i = 0; i < PATH_COUNT; i++) {
     initPhase[i] = Math.random();
-    speed[i] = 0.045 + Math.random() * 0.02;
+    speed[i] = 0.04 + Math.random() * 0.022;
     wobPhase[i] = Math.random() * Math.PI * 2;
     const i3 = i * 3;
-    const br = 0.85 + Math.random() * 0.2;
-    // Farve blandes ved init — partikler bærer hele paletten
-    const t = Math.random();
-    const c = t < 0.33 ? colA : t < 0.66 ? colB : colC;
+    const c = PAL[Math.floor(Math.random() * PAL.length)];
+    const br = 0.82 + Math.random() * 0.22;
     colors[i3] = c.r*br; colors[i3+1] = c.g*br; colors[i3+2] = c.b*br;
+  }
+
+  // Regn-partikler
+  const FIELD_W = 8; const FIELD_H = 6;
+  for (let i = 0; i < RAIN_COUNT; i++) {
+    const gi = PATH_COUNT + i;
+    const i3 = gi * 3;
+    positions[i3]     = (Math.random() - 0.5) * FIELD_W;
+    positions[i3 + 1] = (Math.random() - 0.5) * FIELD_H;
+    positions[i3 + 2] = (Math.random() - 0.5) * 2;
+    rainSpeed[i] = 0.006 + Math.random() * 0.012;
+    // Regn i dæmpede guld/rosa
+    const rc = Math.random() < 0.5
+      ? new THREE.Color(PALETTE.guld) : new THREE.Color(PALETTE.rosa);
+    const br = 0.5 + Math.random() * 0.2;
+    colors[i3] = rc.r*br; colors[i3+1] = rc.g*br; colors[i3+2] = rc.b*br;
   }
 
   const geo = new THREE.BufferGeometry();
@@ -2238,37 +2262,34 @@ function initRejseScene() {
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
-  // Stien: en lang kurve defineret som kubisk bezier-kæde
-  // 4 segmenter der tilsammen danner en S-formet vej i 3D
-  const PATH_POINTS = [
-    {x:-2.4, y:-1.5, z: 0.3},
-    {x:-1.2, y:-0.5, z:-0.4},
-    {x:-0.3, y: 0.5, z: 0.5},
-    {x: 0.5, y: 1.2, z:-0.3},
-    {x: 1.3, y: 0.3, z: 0.4},
-    {x: 2.0, y:-0.8, z:-0.2},
-    {x: 2.5, y:-1.6, z: 0.1},
+  // Stiens base-kontrolpunkter — disse ANIMERES så stien bugter sig
+  const BASE = [
+    {x:-2.6, y:-1.4, z: 0.3},
+    {x:-1.4, y:-0.3, z:-0.4},
+    {x:-0.4, y: 0.6, z: 0.5},
+    {x: 0.4, y: 1.3, z:-0.3},
+    {x: 1.2, y: 0.4, z: 0.4},
+    {x: 2.0, y:-0.6, z:-0.3},
+    {x: 2.7, y:-1.5, z: 0.2},
   ];
 
-  function pathPosition(t) {
-    // Catmull-Rom-agtig interpolation langs punkterne
-    const n = PATH_POINTS.length - 1;
+  // Catmull-Rom interpolation
+  function cr(a,b,c,d,t) {
+    const t2=t*t,t3=t2*t;
+    return 0.5*((-a+3*b-3*c+d)*t3+(2*a-5*b+4*c-d)*t2+(-a+c)*t+2*b);
+  }
+
+  function pathAt(pts, t) {
+    const n = pts.length - 1;
     const f = t * n;
     const idx = Math.min(Math.floor(f), n - 1);
-    const local = f - idx;
-    const p0 = PATH_POINTS[Math.max(idx-1, 0)];
-    const p1 = PATH_POINTS[idx];
-    const p2 = PATH_POINTS[Math.min(idx+1, n)];
-    const p3 = PATH_POINTS[Math.min(idx+2, n)];
-    // Catmull-Rom spline
-    const t2 = local * local, t3 = t2 * local;
-    function cr(a,b,c,d) {
-      return 0.5*((-a+3*b-3*c+d)*t3 + (2*a-5*b+4*c-d)*t2 + (-a+c)*local + 2*b);
-    }
+    const loc = f - idx;
+    const p0=pts[Math.max(idx-1,0)], p1=pts[idx];
+    const p2=pts[Math.min(idx+1,n)], p3=pts[Math.min(idx+2,n)];
     return {
-      x: cr(p0.x,p1.x,p2.x,p3.x),
-      y: cr(p0.y,p1.y,p2.y,p3.y),
-      z: cr(p0.z,p1.z,p2.z,p3.z),
+      x: cr(p0.x,p1.x,p2.x,p3.x,loc),
+      y: cr(p0.y,p1.y,p2.y,p3.y,loc),
+      z: cr(p0.z,p1.z,p2.z,p3.z,loc),
     };
   }
 
@@ -2278,25 +2299,42 @@ function initRejseScene() {
     const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
 
-    for (let i = 0; i < COUNT; i++) {
+    // Stien BUGTER SIG: kontrolpunkterne bevæger sig over tid
+    const live = BASE.map(function(bp, idx) {
+      const s = idx * 1.1;
+      return {
+        x: bp.x + Math.sin(elapsed * 0.25 + s) * 0.45,
+        y: bp.y + Math.cos(elapsed * 0.2 + s * 0.8) * 0.35,
+        z: bp.z + Math.sin(elapsed * 0.18 + s * 1.3) * 0.25,
+      };
+    });
+
+    // Sti-partikler flyder langs den levende kurve
+    for (let i = 0; i < PATH_COUNT; i++) {
       const i3 = i * 3;
-      // Fase langs stien — wraps, partikler flyder kontinuerligt
       const ph = (initPhase[i] + elapsed * speed[i]) % 1;
-      const p = pathPosition(ph);
-      // Lille perpendiculær wobble for bredde på stien
-      const wob = 0.12;
-      const wx = Math.sin(elapsed * 0.6 + wobPhase[i]) * wob;
-      const wy = Math.cos(elapsed * 0.5 + wobPhase[i] * 1.3) * wob;
-      const wz = Math.sin(elapsed * 0.4 + wobPhase[i] * 0.7) * wob * 0.7;
-      pos[i3]     = p.x + wx;
-      pos[i3 + 1] = p.y + wy;
-      pos[i3 + 2] = p.z + wz;
+      const p = pathAt(live, ph);
+      const wob = 0.1;
+      pos[i3]     = p.x + Math.sin(elapsed*0.5 + wobPhase[i]) * wob;
+      pos[i3 + 1] = p.y + Math.cos(elapsed*0.4 + wobPhase[i]*1.3) * wob;
+      pos[i3 + 2] = p.z + Math.sin(elapsed*0.35+ wobPhase[i]*0.7) * wob * 0.6;
+    }
+
+    // Regn falder
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      const gi = PATH_COUNT + i;
+      const i3 = gi * 3;
+      pos[i3 + 1] -= rainSpeed[i];
+      pos[i3]     += Math.sin(elapsed * 0.3 + i * 0.1) * 0.0008;
+      if (pos[i3 + 1] < -FIELD_H / 2) {
+        pos[i3 + 1] = FIELD_H / 2;
+        pos[i3]     = (Math.random() - 0.5) * FIELD_W;
+      }
     }
 
     geo.attributes.position.needsUpdate = true;
-    // Blid rotation så man ser stien fra forskellige vinkler
-    points.rotation.y = Math.sin(elapsed * 0.12) * 0.15;
-    points.rotation.x = Math.sin(elapsed * 0.09 + 0.5) * 0.08;
+    points.rotation.y = Math.sin(elapsed * 0.1) * 0.12;
+    points.rotation.x = Math.sin(elapsed * 0.07 + 0.5) * 0.06;
     renderer.render(scene, camera);
   }
   animate();
