@@ -1232,7 +1232,7 @@
         <div class="reflections-overview" id="reflectionsOverview">
           <h3>Dine gemte refleksioner</h3>
           <div class="reflections-export">
-            <button type="button" id="exportDownload" disabled>Download som tekst</button>
+            <button type="button" id="exportDownload" disabled>Download som dokument</button>
             <button type="button" id="exportEmail" disabled>Send til mig selv</button>
           </div>
           <div id="reflectionsList">
@@ -1637,17 +1637,199 @@
       return lines.join('\n');
     }
 
-    // Download som tekstfil
+    // Generer SVG med partikel-hjerte i appens stil
+    function generateHeartSVG(width, height) {
+      var cx = width / 2, cy = height / 2;
+      var scale = Math.min(width, height) * 0.38;
+      var colors = ['#6b2737', '#c4a265', '#b8707a', '#d4a0a8', '#8a2030', '#d4bb82'];
+      var parts = ['<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg">'];
+      // Outline (tættere ring af partikler)
+      for (var o = 0; o < 120; o++) {
+        var t = (o / 120) * Math.PI * 2;
+        var hx = 16 * Math.pow(Math.sin(t), 3);
+        var hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+        var px = cx + (hx / 17) * scale + (Math.random() - 0.5) * 2;
+        var py = cy - (hy / 17) * scale + (Math.random() - 0.5) * 2;
+        parts.push('<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="1.6" fill="#6b2737" opacity="0.85"/>');
+      }
+      // Fyld (spredte farver inde i hjertet)
+      for (var i = 0; i < 240; i++) {
+        var t2 = Math.random() * Math.PI * 2;
+        var hx2 = 16 * Math.pow(Math.sin(t2), 3);
+        var hy2 = 13 * Math.cos(t2) - 5 * Math.cos(2*t2) - 2 * Math.cos(3*t2) - Math.cos(4*t2);
+        var fill = Math.pow(Math.random(), 0.55);
+        var px2 = cx + (hx2 / 17) * scale * fill + (Math.random() - 0.5) * 3;
+        var py2 = cy - (hy2 / 17) * scale * fill + (Math.random() - 0.5) * 3;
+        var r = 1 + Math.random() * 1.2;
+        var c = colors[Math.floor(Math.random() * colors.length)];
+        var op = 0.55 + Math.random() * 0.35;
+        parts.push('<circle cx="' + px2.toFixed(1) + '" cy="' + py2.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + c + '" opacity="' + op.toFixed(2) + '"/>');
+      }
+      parts.push('</svg>');
+      return parts.join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatExportHTML() {
+      var entries = collectEntries();
+      var today = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+      var heartSvg = generateHeartSVG(240, 210);
+      var entriesHtml = '';
+      entries.forEach(function(e) {
+        var d = new Date(e.date);
+        var dateStr = d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+        var timeStr = d.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+        entriesHtml += '<article class="entry">';
+        entriesHtml += '<div class="entry-date">' + dateStr + ' &middot; ' + timeStr + '</div>';
+        entriesHtml += '<p class="entry-q">' + escapeHtml(questions[e.qId] || 'Spørgsmål ' + e.qId) + '</p>';
+        entriesHtml += '<p class="entry-text">' + escapeHtml(e.text).replace(/\n/g, '<br>') + '</p>';
+        entriesHtml += '</article>';
+      });
+
+      return '<!DOCTYPE html>\n' +
+'<html lang="da">\n' +
+'<head>\n' +
+'<meta charset="UTF-8">\n' +
+'<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'<title>Hjertets Veje — dine refleksioner</title>\n' +
+'<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
+'<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">\n' +
+'<style>\n' +
+'  * { box-sizing: border-box; margin: 0; padding: 0; }\n' +
+'  body {\n' +
+'    font-family: "Cormorant Garamond", Georgia, serif;\n' +
+'    background: #f5efe6;\n' +
+'    color: #2a1a1a;\n' +
+'    line-height: 1.75;\n' +
+'    font-size: 18px;\n' +
+'    -webkit-font-smoothing: antialiased;\n' +
+'  }\n' +
+'  .page {\n' +
+'    max-width: 720px;\n' +
+'    margin: 0 auto;\n' +
+'    padding: 4rem 2.2rem 5rem;\n' +
+'  }\n' +
+'  header {\n' +
+'    text-align: center;\n' +
+'    margin-bottom: 4rem;\n' +
+'  }\n' +
+'  .illus { margin: 0 auto 2rem; display: block; }\n' +
+'  .pretitle {\n' +
+'    font-family: "Instrument Sans", sans-serif;\n' +
+'    font-size: 0.72rem;\n' +
+'    letter-spacing: 0.32em;\n' +
+'    text-transform: uppercase;\n' +
+'    color: #8a7e76;\n' +
+'    margin-bottom: 1.2rem;\n' +
+'  }\n' +
+'  h1 {\n' +
+'    font-family: "Cormorant Garamond", serif;\n' +
+'    font-weight: 300;\n' +
+'    font-style: italic;\n' +
+'    font-size: 3rem;\n' +
+'    color: #6b2737;\n' +
+'    line-height: 1.05;\n' +
+'    margin-bottom: 0.7rem;\n' +
+'  }\n' +
+'  .subtitle {\n' +
+'    font-family: "Cormorant Garamond", serif;\n' +
+'    font-size: 1.2rem;\n' +
+'    font-style: italic;\n' +
+'    color: #8a7e76;\n' +
+'    margin-bottom: 1.2rem;\n' +
+'  }\n' +
+'  .date {\n' +
+'    font-family: "Instrument Sans", sans-serif;\n' +
+'    font-size: 0.72rem;\n' +
+'    letter-spacing: 0.22em;\n' +
+'    text-transform: uppercase;\n' +
+'    color: #6b2737;\n' +
+'  }\n' +
+'  .divider {\n' +
+'    width: 60px;\n' +
+'    height: 1px;\n' +
+'    background: #c4a265;\n' +
+'    margin: 3.5rem auto;\n' +
+'    opacity: 0.55;\n' +
+'  }\n' +
+'  .entry {\n' +
+'    margin-bottom: 3rem;\n' +
+'    padding-bottom: 2.5rem;\n' +
+'    border-bottom: 1px solid rgba(196,162,101,0.25);\n' +
+'  }\n' +
+'  .entry:last-child { border-bottom: none; }\n' +
+'  .entry-date {\n' +
+'    font-family: "Instrument Sans", sans-serif;\n' +
+'    font-size: 0.64rem;\n' +
+'    letter-spacing: 0.2em;\n' +
+'    text-transform: uppercase;\n' +
+'    color: #c4a265;\n' +
+'    margin-bottom: 0.8rem;\n' +
+'  }\n' +
+'  .entry-q {\n' +
+'    font-family: "Cormorant Garamond", serif;\n' +
+'    font-size: 1.05rem;\n' +
+'    font-style: italic;\n' +
+'    color: #8a7e76;\n' +
+'    margin-bottom: 1rem;\n' +
+'    line-height: 1.55;\n' +
+'  }\n' +
+'  .entry-text {\n' +
+'    font-family: "Cormorant Garamond", serif;\n' +
+'    font-size: 1.2rem;\n' +
+'    line-height: 1.8;\n' +
+'    color: #2a1a1a;\n' +
+'  }\n' +
+'  footer {\n' +
+'    text-align: center;\n' +
+'    margin-top: 5rem;\n' +
+'  }\n' +
+'  .colophon {\n' +
+'    font-family: "Instrument Sans", sans-serif;\n' +
+'    font-size: 0.68rem;\n' +
+'    letter-spacing: 0.3em;\n' +
+'    text-transform: uppercase;\n' +
+'    color: #8a7e76;\n' +
+'  }\n' +
+'  @media print {\n' +
+'    body { font-size: 14px; }\n' +
+'    .page { padding: 2rem 1.5rem; max-width: none; }\n' +
+'    .entry { page-break-inside: avoid; }\n' +
+'  }\n' +
+'</style>\n' +
+'</head>\n' +
+'<body>\n' +
+'<div class="page">\n' +
+'<header>\n' +
+'<div class="illus">' + heartSvg + '</div>\n' +
+'<div class="pretitle">Hjertets Veje</div>\n' +
+'<h1>Dine refleksioner</h1>\n' +
+'<p class="subtitle">Samlet undervejs på hjertets veje</p>\n' +
+'<p class="date">Eksporteret ' + today + '</p>\n' +
+'</header>\n' +
+'<div class="divider"></div>\n' +
+'<main>\n' + entriesHtml + '</main>\n' +
+'<footer><p class="colophon">Hjertets Veje &middot; 2026</p></footer>\n' +
+'</div>\n' +
+'</body>\n' +
+'</html>';
+    }
+
+    // Download som HTML-dokument med illustration
     var dlBtn = document.getElementById('exportDownload');
     if (dlBtn) {
       dlBtn.addEventListener('click', function() {
-        var text = formatExportText();
-        var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        var html = formatExportHTML();
+        var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         var today = new Date().toISOString().slice(0, 10);
         a.href = url;
-        a.download = 'hjertets-veje-refleksioner-' + today + '.txt';
+        a.download = 'hjertets-veje-refleksioner-' + today + '.html';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
