@@ -302,133 +302,164 @@ function initHero() {
 }
 
 /* ============================================================
-   SCENE 1 — Kapitel I: "Alle steder på én gang"
-   12 klynger ankommer fra alle retninger og finder hinanden
-   i et fælles, orbiterende felt.
+   SCENE 1 — Intro: To hjerter træder frem fra en sky,
+   pulser side om side. Et tredje hjerte kommer til, det ene
+   rykker op og bliver mindre. Tre hjerter banker i takt.
    ============================================================ */
 function initScene1() {
-  const ctx = initScene('scene1', 55, 14);
+  const ctx = initScene('scene1', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
-  camera.position.set(0, 0, 6);
-  state.baseZ = camera.position.z;
+  camera.position.set(0, 0.1, 5.5);
+  state.baseZ = 5.5;
   state.updateCamera();
 
-  const CLUSTERS = 12;
-  const PER_CLUSTER = 80;
-  const COUNT = CLUSTERS * PER_CLUSTER; // 960
+  // 400 per hjerte × 3 = 1200 + 300 sky = 1500
+  const PER_H = 400;
+  const CLOUD = 300;
+  const COUNT = PER_H * 3 + CLOUD;
+  const H_SCALE = 0.85;
 
   const positions = new Float32Array(COUNT * 3);
   const colors    = new Float32Array(COUNT * 3);
-
-  // Per-partikel data: origin, target, cluster-indeks, orbit-fase
-  const origins = new Float32Array(COUNT * 3);
-  const targets = new Float32Array(COUNT * 3);
+  // Per partikel: lokalt offset i hjertekurven
+  const localX = new Float32Array(COUNT);
+  const localY = new Float32Array(COUNT);
+  const localZ = new Float32Array(COUNT);
   const phases  = new Float32Array(COUNT);
 
-  // 12 varme nuancer — én per cluster
-  const clusterColors = [
-    PALETTE.guld, PALETTE.rosa, PALETTE.bordeaux, PALETTE.amber,
-    PALETTE.sand, PALETTE.koral, PALETTE.mahogni, PALETTE.mosgroen,
-    PALETTE.terracotta, PALETTE.lavendel, PALETTE.fersken, PALETTE.honning,
-  ].map((hex) => new THREE.Color(hex));
+  const PAL = [PALETTE.bordeaux,PALETTE.guld,PALETTE.rosa,PALETTE.rosaLight,
+    PALETTE.teal,PALETTE.lilla,PALETTE.salvie,PALETTE.amber,
+    PALETTE.guldLight,PALETTE.honning,PALETTE.koral,PALETTE.warmGrey];
 
-  for (let c = 0; c < CLUSTERS; c++) {
-    // Unik retning for hvert cluster — fordelt jævnt på kuglen
-    const phi   = Math.acos(1 - 2 * (c + 0.5) / CLUSTERS);
-    const theta = Math.PI * (1 + Math.sqrt(5)) * c; // golden angle
-    const originRadius = (8 + Math.random() * 4) * (0.7 + 0.3 * mobileScale());     // 8-12, scaled for mobile
-    const ox = originRadius * Math.sin(phi) * Math.cos(theta);
-    const oy = originRadius * Math.sin(phi) * Math.sin(theta);
-    const oz = originRadius * Math.cos(phi) * 0.4;  // fladere på z
-
-    const col = clusterColors[c];
-
-    for (let p = 0; p < PER_CLUSTER; p++) {
-      const i = c * PER_CLUSTER + p;
+  // Skab hjertepositioner for alle 3 hjerter
+  for (let h = 0; h < 3; h++) {
+    for (let p = 0; p < PER_H; p++) {
+      const i = h * PER_H + p;
       const i3 = i * 3;
-
-      // Origin med lille spread omkring clusterets udgangspunkt
-      origins[i3]     = ox + (Math.random() - 0.5) * 0.8;
-      origins[i3 + 1] = oy + (Math.random() - 0.5) * 0.8;
-      origins[i3 + 2] = oz + (Math.random() - 0.5) * 0.8;
-
-      // Target: løs sfære om centrum, radius 1.5–3
-      const tPhi   = Math.acos(2 * Math.random() - 1);
-      const tTheta = Math.random() * Math.PI * 2;
-      const tR     = 1.5 + Math.random() * 1.5;
-      targets[i3]     = tR * Math.sin(tPhi) * Math.cos(tTheta);
-      targets[i3 + 1] = tR * Math.sin(tPhi) * Math.sin(tTheta);
-      targets[i3 + 2] = tR * Math.cos(tPhi) * 0.6;
-
-      // Start-position = origin
-      positions[i3]     = origins[i3];
-      positions[i3 + 1] = origins[i3 + 1];
-      positions[i3 + 2] = origins[i3 + 2];
-
-      colors[i3]     = col.r;
-      colors[i3 + 1] = col.g;
-      colors[i3 + 2] = col.b;
-
+      const t = Math.random() * Math.PI * 2;
+      const hp = heartPoint(t, H_SCALE);
+      const fill = Math.pow(Math.random(), 0.5);
+      localX[i] = hp.x * fill + (Math.random()-0.5)*0.06;
+      localY[i] = hp.y * fill + (Math.random()-0.5)*0.06;
+      localZ[i] = (Math.random()-0.5)*0.25;
       phases[i] = Math.random() * Math.PI * 2;
+      // Start i sky (spredt)
+      positions[i3]   = (Math.random()-0.5)*5;
+      positions[i3+1] = (Math.random()-0.5)*4;
+      positions[i3+2] = (Math.random()-0.5)*2;
+      const c = new THREE.Color(PAL[Math.floor(Math.random()*PAL.length)]);
+      const br = 0.85+Math.random()*0.2;
+      colors[i3]=c.r*br; colors[i3+1]=c.g*br; colors[i3+2]=c.b*br;
     }
   }
+  // Sky-partikler
+  for (let i = PER_H*3; i < COUNT; i++) {
+    const i3 = i * 3;
+    positions[i3]   = (Math.random()-0.5)*5;
+    positions[i3+1] = (Math.random()-0.5)*4;
+    positions[i3+2] = (Math.random()-0.5)*2;
+    phases[i] = Math.random() * Math.PI * 2;
+    const c = new THREE.Color(PAL[Math.floor(Math.random()*PAL.length)]);
+    const br = 0.6+Math.random()*0.2;
+    colors[i3]=c.r*br; colors[i3+1]=c.g*br; colors[i3+2]=c.b*br;
+  }
+  const startPos = new Float32Array(positions);
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
-
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   const mat = new THREE.PointsMaterial({
-    size: 0.16,
-    map: softCircleTexture(),
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.9,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.NormalBlending,
+    size: 0.11, map: softCircleTexture(), vertexColors: true,
+    transparent: true, opacity: 0.92, sizeAttenuation: true,
+    depthWrite: false, blending: THREE.NormalBlending,
   });
-
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
-  // ---- Animation ----
-  const ARRIVAL_DURATION = 8; // sekunder
+  function lerp(a,b,t) { return a+(b-a)*t; }
 
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
-
     const elapsed = loopElapsed(state);
-    const t = Math.min(elapsed / ARRIVAL_DURATION, 1);
-    const eased = easeOutCubic(t);
-
     const pos = geo.attributes.position.array;
+
+    // Faser:
+    // 0-3: sky → to hjerter (A venstre, B højre) træder frem
+    // 3-8: A og B pulser side om side
+    // 8-10: C kommer ind fra højre → tager B's plads, B rykker op+krymp
+    // 10-14: alle tre pulser i takt
+    const emergeT = easeInOutQuad(Math.min(1, elapsed / 3));
+    const transT = elapsed < 8 ? 0 : easeInOutQuad(Math.min(1, (elapsed-8)/2));
+
+    // Heartbeat (50 BPM)
+    const beatPhase = elapsed * (50/60);
+    const beat = Math.pow(Math.max(0, Math.sin(beatPhase * Math.PI * 2)), 3);
+    const pulse = 1 + beat * 0.04;
+
+    // Hjertecentre over tid
+    // A: altid venstre (-1.1, 0)
+    const ax = -1.1, ay = 0;
+    // B: starter højre (1.1, 0), rykker op til (0, 1.3) og halv størrelse
+    const bx = lerp(1.1, 0, transT);
+    const by = lerp(0, 1.35, transT);
+    const bScale = lerp(1, 0.5, transT);
+    // C: starter off-screen (4, 0), rykker til højre (1.1, 0)
+    const cx = lerp(4, 1.1, transT);
+    const cy = 0;
+    const cVisible = elapsed > 7.5; // begynder at dukke op lidt før transition
 
     for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
+      let x, y, z;
 
-      // Interpolér origin → target
-      const tx = origins[i3]     + (targets[i3]     - origins[i3])     * eased;
-      const ty = origins[i3 + 1] + (targets[i3 + 1] - origins[i3 + 1]) * eased;
-      const tz = origins[i3 + 2] + (targets[i3 + 2] - origins[i3 + 2]) * eased;
+      if (i < PER_H) {
+        // Hjerte A (venstre)
+        const hx = ax + localX[i] * pulse;
+        const hy = ay + localY[i] * pulse;
+        const hz = localZ[i];
+        x = startPos[i3]*(1-emergeT) + hx*emergeT;
+        y = startPos[i3+1]*(1-emergeT) + hy*emergeT;
+        z = startPos[i3+2]*(1-emergeT) + hz*emergeT;
+      } else if (i < PER_H*2) {
+        // Hjerte B (starter højre, rykker op+krymp)
+        const hx = bx + localX[i] * bScale * pulse;
+        const hy = by + localY[i] * bScale * pulse;
+        const hz = localZ[i] * bScale;
+        x = startPos[i3]*(1-emergeT) + hx*emergeT;
+        y = startPos[i3+1]*(1-emergeT) + hy*emergeT;
+        z = startPos[i3+2]*(1-emergeT) + hz*emergeT;
+      } else if (i < PER_H*3) {
+        // Hjerte C (kommer ind fra højre ved 8s)
+        if (!cVisible) {
+          x = -100; y = -100; z = 0;
+        } else {
+          const fadeIn = easeInOutQuad(Math.min(1, (elapsed-7.5)/1.5));
+          const hx = cx + localX[i] * pulse;
+          const hy = cy + localY[i] * pulse;
+          const hz = localZ[i];
+          x = (4 + localX[i])*(1-fadeIn) + hx*fadeIn;
+          y = localY[i]*(1-fadeIn) + hy*fadeIn;
+          z = hz * fadeIn;
+        }
+      } else {
+        // Sky-partikler: synlige i starten, opløses når hjerterne former sig
+        const cloudFade = 1 - emergeT;
+        if (cloudFade < 0.05) {
+          x = -100; y = -100; z = 0;
+        } else {
+          x = startPos[i3] + Math.sin(elapsed*0.3+phases[i])*0.08;
+          y = startPos[i3+1] + Math.cos(elapsed*0.25+phases[i]*1.3)*0.06;
+          z = startPos[i3+2];
+        }
+      }
 
-      // Efter ankomst: kollektiv ånding (expand/contract) + svæv
-      const postT = Math.max(0, elapsed - ARRIVAL_DURATION);
-      const breath = eased * (1 + Math.sin(postT * 0.7) * 0.08);
-      const wob = 0.08 * eased;
-      pos[i3]     = tx * breath + Math.sin(postT * 0.4 + phases[i])       * wob;
-      pos[i3 + 1] = ty * breath + Math.cos(postT * 0.35 + phases[i] * 1.3) * wob;
-      pos[i3 + 2] = tz * breath + Math.sin(postT * 0.3 + phases[i] * 0.7)  * wob;
+      pos[i3]=x; pos[i3+1]=y; pos[i3+2]=z;
     }
 
     geo.attributes.position.needsUpdate = true;
-
-    // Langsom orbit-rotation af hele feltet (0.05 rad/s)
-    points.rotation.y = elapsed * 0.05;
-    points.rotation.x = Math.sin(elapsed * 0.03) * 0.1;
-
     renderer.render(scene, camera);
   }
   animate();
