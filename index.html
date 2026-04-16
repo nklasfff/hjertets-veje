@@ -43,6 +43,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    padding-bottom: 80px;
   }
 
   ::selection { background: var(--guld); color: var(--bordeaux-deep); }
@@ -415,10 +416,116 @@
     .intro-text p { font-size: 1.18rem; }
     .quote-text { font-size: 1.18rem; }
   }
+
+  /* ---------- NAVIGATION ---------- */
+  .screen-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(245,239,230,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(196,162,101,0.2);
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    z-index: 100;
+  }
+  .screen-nav a {
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--warm-grey);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .screen-nav a.active {
+    color: var(--bordeaux);
+    border-bottom: 1px solid var(--guld);
+    padding-bottom: 2px;
+  }
+  .screen-nav a:hover { color: var(--bordeaux); }
+
+  @media (max-width: 600px) {
+    .screen-nav { gap: 1rem; padding: 0.8rem 1rem; overflow-x: auto; }
+    .screen-nav a { font-size: 0.65rem; white-space: nowrap; }
+  }
+
+  /* ---------- SCREENS ---------- */
+  .screen[hidden] { display: none !important; }
+
+  /* ---------- SCREEN HEADERS ---------- */
+  .screen-header {
+    text-align: center;
+    padding: 6rem 2rem 3rem;
+  }
+
+  /* ---------- REJSE ---------- */
+  .reflection-prompt {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--bordeaux);
+    text-align: center;
+    margin: 3rem 0 1.5rem;
+  }
+  .reflection-textarea {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--guld);
+    padding: 0.8rem 0;
+    resize: vertical;
+    outline: none;
+  }
+  .reflection-textarea:focus { border-bottom-color: var(--bordeaux); }
+  .reflection-note {
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--warm-grey);
+    text-align: center;
+    margin-top: 4rem;
+    opacity: 0.7;
+  }
+
+  /* ---------- HJERTER ---------- */
+  .heart-separator {
+    text-align: center;
+    color: var(--guld);
+    font-size: 1.2rem;
+    letter-spacing: 0.5em;
+    margin: 4rem 0;
+    opacity: 0.5;
+  }
+  .heart-entry h3 {
+    font-family: var(--serif);
+    font-size: clamp(1.6rem, 3.5vw, 2rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--bordeaux);
+    margin-bottom: 1.8rem;
+    line-height: 1.2;
+  }
 </style>
 </head>
 
 <body>
+
+  <!-- ============ SCREEN: VEJE ============ -->
+  <div class="screen" data-screen="veje">
 
   <!-- ============ HERO ============ -->
   <section class="hero">
@@ -436,7 +543,7 @@
   </section>
 
   <!-- ============ CONTENT ============ -->
-  <main class="content-wrapper">
+  <div class="content-wrapper">
 
     <!-- INTRO -->
     <section class="section intro-text">
@@ -671,9 +778,505 @@
       <div class="closing-colophon">Hjertets Veje · 2026</div>
     </section>
 
-  </main>
+  </div><!-- /content-wrapper -->
+
+  </div><!-- /screen:veje -->
+
+  <!-- ============ SCREEN: EMBRYOLOGI ============ -->
+  <div class="screen" data-screen="embryologi" hidden>
+    <div class="content-wrapper">
+
+      <div class="screen-header">
+        <div class="chapter-number">Uddybning</div>
+        <h2 class="chapter-title">Embryologien</h2>
+        <div class="chapter-subtitle">Livets første arkitektur</div>
+      </div>
+
+      <section class="section">
+        <div class="body-text">
+          <p>Det, der begynder i fostret, slutter aldrig. De kræfter, der engang formede os, virker stadig i os, hvert sekund, i hver celle, i hvert åndedrag. Embryologien er ikke en fortælling om, hvordan vi engang blev til. Det er en beskrivelse af, hvordan vi bliver til nu.</p>
+          <p>Her følger ni iagttagelser, samlet gennem et langt forskerliv af den tyske embryolog Erich Blechschmidt.</p>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- PRINCIP I -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">I</div>
+          <h2 class="chapter-title">Bevægelse skaber form</h2>
+        </div>
+        <div class="body-text">
+          <p>Først kommer bevægelsen. Derefter formen.</p>
+          <p>Længe har det været vanen at tænke det omvendt. At hjertet dannes, og så begynder det at slå. At knoglen dannes, og så kan den bære. Men embryologien viser noget andet. Først er der pulsering, så opstår hjertet. Først er der udstrækning, så opstår knoglen.</p>
+          <p>Funktionen går forud for strukturen. Livet bevæger sig, og bevægelsen lader formen træde frem. Vi er ikke en krop, der lærer at bevæge sig. Vi er bevægelse, der har antaget form.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP II -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">II</div>
+          <h2 class="chapter-title">Væsken som formens arkitekt</h2>
+        </div>
+        <div class="body-text">
+          <p>Det er væsken, der former os.</p>
+          <p>I fostret virker otte forskellige væskedynamikker sammen. Kompression og ekspansion, koncentration og tilbageholdelse, åbning og trækkraft, erosion og opløsning. De er ikke mekaniske kræfter udefra. De er vævets egen bevægelse i det rum, det udfolder sig i. Og de følger love, der er ældre end enhver genetisk kode.</p>
+          <p>Kroppen, vi kender, er en vandkrop, der har lært at stå op. Den husker stadig sit ophav som væske. Det er derfor, blid berøring kan bevæge os så dybt. Vi møder det sted, hvorfra vi oprindeligt blev til.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP III -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">III</div>
+          <h2 class="chapter-title">Metaboliske felter som intelligens</h2>
+        </div>
+        <div class="body-text">
+          <p>I fostret er der områder, hvor en særlig aktivitet foregår. Felter, hvor stofskifteprocesser og biomekaniske bevægelser samler sig i organiserede mønstre. Det er disse felter, der skaber formen.</p>
+          <p>Nogle er tidlige og styrer den grundlæggende organisering af hele embryonet. Andre er sene og meget specifikke. Fortætningsfelter, hvor knoglen opstår. Udvidelsesfelter, hvor muskel træder frem.</p>
+          <p>Cellerne ved ikke, hvad de skal blive. Feltet, de står i, ved det. Og feltet er ikke en ting. Det er en kvalitet af tilstedeværelse, et sted hvor bevægelse har samlet sig og er begyndt at organisere sig selv.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP IV -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">IV</div>
+          <h2 class="chapter-title">Den ekstragenetiske vejledning</h2>
+        </div>
+        <div class="body-text">
+          <p>Generne alene kunne aldrig gøre det.</p>
+          <p>Uden den vejledning, der opstår gennem væskernes bevægelse og vævets mekaniske kræfter, ville differentieringen aldrig begynde. Cellerne ville ikke vide, hvad de skulle blive. De metaboliske felter skaber organiserede mønstre af bevægelse, der fastholder den præcise rumlige og tidsmæssige koordination, som udviklingen kræver.</p>
+          <p>Noget udover koden er altid med. Noget, der ikke står skrevet nogen steder, men som alligevel vejleder. Et felt. En kontekst. En sammenhæng. Den samme vejledning, biodynamisk arbejde taler om, virker stadig i os, lang tid efter fødslen.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP V -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">V</div>
+          <h2 class="chapter-title">Embryonets egen viden</h2>
+        </div>
+        <div class="body-text">
+          <p>Embryonet er ikke passivt. Det lader sig ikke bygge af instrukser udefra. Det deltager aktivt i sin egen udvikling gennem det, Blechschmidt kaldte vækstgestus.</p>
+          <p>En vækstgestus er en meningsfuld bevægelse, der foregriber en funktion, længe før funktionen er blevet til. Hånden strækker sig, før der findes noget at gribe. Mundens læber runder sig, før de skal suge. Hjertet pulserer, før det skal pumpe blod.</p>
+          <p>Embryonet ved, hvad det bevæger sig imod. Ikke med et sind, men med en iboende retning. En viden, der er ældre end tanken, og som aldrig forlader os helt.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP VI -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">VI</div>
+          <h2 class="chapter-title">Cellen som bevægelsens øjeblik</h2>
+        </div>
+        <div class="body-text">
+          <p>En celle er ikke en ting.</p>
+          <p>Blechschmidt definerede cellen som et øjebliks aspekt af rumligt ordnet stofskiftebevægelse. Ikke en bygning, men et billede af en bevægelse, der er standset længe nok til at blive set.</p>
+          <p>Den cellulære eksistens afhænger af bevægelse. Når bevægelsen ophører, ophører cellen. Vi er ikke sammensat af byggeklodser, der er blevet stillet oven på hinanden. Vi er et mønster af bevægelse, der i hvert øjeblik lader sig iagttage som form.</p>
+          <p>Heling er ikke at reparere en struktur. Heling er at genoprette bevægelsen, der lod strukturen træde frem i første omgang.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP VII -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">VII</div>
+          <h2 class="chapter-title">Fra periferi mod centrum</h2>
+        </div>
+        <div class="body-text">
+          <p>Vi formes udefra og ind.</p>
+          <p>Organerne opstår ikke som genetiske sammensætninger, der først bygges indefra. De formes af væskernes bevægelse omkring og gennem de områder, hvor de senere vil træde frem. Hjertet dannes, fordi noget bevæger sig omkring den plads, det skal fylde.</p>
+          <p>Det indre skabes ikke først. Det ydre giver det indre sin form. Periferien vejleder centrum.</p>
+          <p>Måske formes vi stadig sådan. Gennem det, der omgiver os. Gennem rummet, vi står i. Gennem de hænder, der møder os. Vi er aldrig formet af os selv alene.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP VIII -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">VIII</div>
+          <h2 class="chapter-title">Rytmen mellem aktivitet og hvile</h2>
+        </div>
+        <div class="body-text">
+          <p>Udviklingen sker ikke i én strøm. Den sker i rytmer.</p>
+          <p>Aktive metaboliske faser, hvor kompression skaber nyt væv, veksler med relative hvilefaser, hvor ekspansionsvæksten sker gennem det onkotiske tryk i det nydannede. Derefter følger konsolideringen gennem fortætning.</p>
+          <p>Mellem hver fase en pause. Et åndedræt. En ventetid. Det nye kan ikke hastes frem. Det må have sin rytme for at kunne bære sig selv.</p>
+          <p>Denne rytme kender vi også senere i livet. Efter enhver dyb forvandling kommer en periode, hvor noget nyt er ankommet, men endnu ikke har sat sig. Det må have tid. Rytmen mellem aktivitet og hvile er ikke en luksus. Det er selve formens betingelse.</p>
+        </div>
+      </section>
+
+      <!-- PRINCIP IX -->
+      <section class="section">
+        <div class="chapter-header">
+          <div class="chapter-number">IX</div>
+          <h2 class="chapter-title">De biodynamiske kræfter fortsætter livet igennem</h2>
+        </div>
+        <div class="body-text">
+          <p>De kræfter, der skabte os, ophører ikke ved fødslen. De vedligeholdes gennem hele livet som vækstkræfter, udviklingskræfter, helingskræfter. De generative kræfter i embryonet er identiske med de regenerative kræfter i den voksne.</p>
+          <p>Det, der engang lod os blive til, er det, der lader os hele. Det, der skabte hjertet, er det, der stadig lader hjertet slå. Det, der vejledte os i moderens krop, vejleder os stadig.</p>
+          <p>Vi har ikke forladt den første arkitektur. Vi står stadig i den. Og når vi lytter, mærker vi den, som en puls, en bevægelse, en retning, der aldrig forlod os.</p>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="section closing">
+        <div class="body-text">
+          <p>Ni iagttagelser. Ni vinkler på det samme. At noget levende i os kender sin egen vej. At vi bæres, næres, udfoldes af bevægelser, der er ældre end os selv, og som aldrig er stoppet.</p>
+          <p>Det er den samme bevægelse, der skabte hjertet. Det er den, vi lytter til, når vi rækker hånden ud.</p>
+        </div>
+      </section>
+
+    </div>
+  </div><!-- /screen:embryologi -->
+
+  <!-- ============ SCREEN: REJSE ============ -->
+  <div class="screen" data-screen="rejse" hidden>
+    <div class="content-wrapper">
+
+      <div class="screen-header">
+        <div class="chapter-number">En invitation</div>
+        <h2 class="chapter-title">Dit hjertes rejse</h2>
+        <div class="chapter-subtitle">Spørgsmål til stilheden i dig</div>
+      </div>
+
+      <section class="section">
+        <div class="body-text">
+          <p>Spørgsmål som disse har ingen svar, der kan gives hurtigt. De skal leves med. Nogle rører noget med det samme. Andre må have tid. Det, du skriver her, gemmes kun i denne browser og tilhører kun dig.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvor i din krop mærker du dit hjerte lige nu? Ikke pulsen, men tilstedeværelsen. Er der et sted, hvor det er lukket? Et sted, hvor det er åbent?</p>
+        <textarea class="reflection-textarea" data-reflection="1" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Tænk på et menneske, der har lært dit hjerte noget. Ikke nødvendigvis gennem kærlighed. Måske gennem tab. Hvad var det, det menneske lærte dig?</p>
+        <textarea class="reflection-textarea" data-reflection="2" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvornår har du sidst mærket overgivelse? Ikke som opgivelse, men som den bevægelse, hvor du holdt op med at kæmpe. Hvad gav sig i dig dengang?</p>
+        <textarea class="reflection-textarea" data-reflection="3" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Er der noget, dit hjerte længe har prøvet at fortælle dig, som du ikke helt har turdet lytte til? Du behøver ikke skrive det ned. Bare mærk, om det er der.</p>
+        <textarea class="reflection-textarea" data-reflection="4" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvilke spor fra dit liv lever stadig i dig? Spor, du måske troede, du havde lagt bag dig, men som viser sig at være en del af, hvordan du stadig bevæger dig i verden.</p>
+        <textarea class="reflection-textarea" data-reflection="5" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvor er din berøring blødest? Hvor er den hårdest? Hvad siger det om, hvor du bor i dig selv lige nu?</p>
+        <textarea class="reflection-textarea" data-reflection="6" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Når du tænker på det fælles hjerte, ikke som idé, men som noget du har mærket, hvornår har du sidst stået i det? Med hvem? I hvilket rum?</p>
+        <textarea class="reflection-textarea" data-reflection="7" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvad er dit hjerte trætte af? Og hvad længes det efter?</p>
+        <textarea class="reflection-textarea" data-reflection="8" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Hvis stilheden i dig kunne tale, hvad tror du, den ville sige? Skriv det første, der kommer. Også hvis det ingen mening giver.</p>
+        <textarea class="reflection-textarea" data-reflection="9" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Er der noget i dig, du ved er der, men som endnu ikke helt er trådt frem? Hvad kalder det på?</p>
+        <textarea class="reflection-textarea" data-reflection="10" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Forestil dig, at dit hjerte kunne vælge én ting at give slip på i dag. Hvad ville det være?</p>
+        <textarea class="reflection-textarea" data-reflection="11" rows="4"></textarea>
+      </section>
+
+      <section class="section">
+        <p class="reflection-prompt">Og hvis dit hjerte kunne byde én ting velkommen i dag, hvad ville det så være?</p>
+        <textarea class="reflection-textarea" data-reflection="12" rows="4"></textarea>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="section closing">
+        <div class="body-text">
+          <p>Der kommer ingen svar udefra. Men der er en vej. Og den vej går igennem dit eget hjerte.</p>
+        </div>
+        <p class="reflection-note">Dine ord gemmes kun i denne browser</p>
+      </section>
+
+    </div>
+  </div><!-- /screen:rejse -->
+
+  <!-- ============ SCREEN: HJERTER ============ -->
+  <div class="screen" data-screen="hjerter" hidden>
+    <div class="content-wrapper">
+
+      <div class="screen-header">
+        <div class="chapter-number">Et atlas</div>
+        <h2 class="chapter-title">De andre hjerter</h2>
+        <div class="chapter-subtitle">Hjertet på verdens sprog</div>
+      </div>
+
+      <section class="section">
+        <div class="body-text">
+          <p>At sige hjerte på et andet sprog er ikke det samme som at oversætte ordet. Hvert sprog har lagt andre erfaringer ind i det, de kalder hjerte. Nogle sprog har flere ord for det, vi kun har ét for. Nogle har ingen ord, der adskiller hjerte fra sind. Nogle placerer hjertet et andet sted i kroppen. Og nogle udvider det helt ud over kroppen.</p>
+          <p>Det, der følger, er ikke en liste over synonymer. Det er fjorten forskellige måder at forstå, hvad det vil sige at være menneske, fortalt gennem det sted, mennesker gennem tiderne har pegt på, når de ville sige <em>her er jeg</em>.</p>
+        </div>
+      </section>
+
+      <!-- sonqo -->
+      <section class="section heart-entry">
+        <h3>sonqo · Quechua</h3>
+        <div class="body-text">
+          <p>I Quechua, det sprog der taltes i Inkariget og stadig tales fra Colombia til Argentina, bærer <em>sonqo</em> mange forgreninger. At have <em>allin sonqo</em>, et godt hjerte, er at være venlig, ærlig, balanceret, forbundet med andre og med naturen. Et <em>allin sonqo</em> er ikke noget, man fødes med og beholder. Det er noget, man bærer og plejer.</p>
+          <p>De traditionelle åndelige lærere i Andesbjergene, paqos'erne, skelner mellem det fysiske hjerte, <em>pirwa</em>, og <em>sonqo ñawi</em>, hjertets øje. <em>Sonqo ñawi</em> er energicentret, stedet for følelser. Det sidder i brystet, men det er ikke muskelen. Det er en anden slags organ, et for at mærke, for at modtage verden.</p>
+          <p>Der findes et ord i Quechua, <em>munay</em>, der oftest oversættes til kærlighed, men som betyder noget mere end det. <em>Munay</em> er den vilje, der har forbundet sig med hjertet. En hensigt, der ikke længere er adskilt fra ømhed. At leve i <em>munay</em> er at leve fra sit <em>sonqo</em>, og at lade det, man gør, være gennemstrømmet af både kraft og kærlighed på én gang.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- kokoro -->
+      <section class="section heart-entry">
+        <h3>kokoro · Japansk · 心</h3>
+        <div class="body-text">
+          <p>På japansk er det næsten umuligt at sige, at nogen har et godt sind eller et varmt hjerte hver for sig. Der er kun <em>kokoro</em>. Når en japaner siger <em>kokoro kara arigatō</em>, tak fra <em>kokoro</em>, betyder det ikke bare fra hjertet, men fra hele det sted i mig, der overhovedet kan føle, tænke og mene noget.</p>
+          <p>Sproget vrimler med sammensætninger, der bruger <em>kokoro</em>. <em>Shinpai</em>, at være bekymret, betyder ordret at fordele sit <em>kokoro</em>, at have det spredt ud over flere ting. <em>Kokoro-zukai</em> er den ømme opmærksomhed, man viser andre. <em>Kokoro-yasume</em> er at lade sit <em>kokoro</em> hvile. Og <em>mushin</em>, no-<em>kokoro</em>, er den tilstand, zen-praksis søger. Ikke tankeløs, men befriet fra den støj, der forhindrer én i at være til stede.</p>
+          <p>Natsume Sōseki skrev i 1914 romanen <em>Kokoro</em>, og titlen blev stående uoversat, for ingen af de engelske ord — <em>heart, mind, soul</em> — kunne rumme, hvad bogen handler om. Måske skal <em>kokoro</em> ikke oversættes. Måske skal det læres.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- qalb -->
+      <section class="section heart-entry">
+        <h3>qalb · Arabisk · قلب</h3>
+        <div class="body-text">
+          <p><em>Qalb</em> kommer af roden <em>q-l-b</em>, at vende, at dreje, at forvandle. Det er ingen tilfældighed, at hjertet har fået netop dét navn. I den islamiske tradition er hjertet det eneste i mennesket, der er i konstant bevægelse. Det står aldrig stille. Det vender sig hele tiden, mod noget andet, mod det samme igen, mod Gud, væk fra Gud, tilbage til Gud.</p>
+          <p>Sufierne arbejder med fire lag af hjertet, først beskrevet af al-Nūrī i det niende århundrede. <em>Ṣadr</em> er brystet, det yderste rum, hvor livets almindelige bevægelser foregår. <em>Qalb</em> er det egentlige hjerte, der vender sig mellem verden og Gud. <em>Fuʾād</em> er det sted, der kan slås direkte, hvor mødet sker uden filter. Og <em>lubb</em> er kernen, essensen, det der ikke længere kan åbnes, fordi det allerede er åbent.</p>
+          <p>Ibn Arabi brugte et ordspil på <em>qalb</em> og <em>qābil</em>, modtagelig, som deler samme rodbogstaver i forskellig orden. Hjertet er modtageligt, fordi det vender sig. Og det vender sig, fordi det er modtageligt.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- sems -->
+      <section class="section heart-entry">
+        <h3>sems · Tibetansk · སེམས</h3>
+        <div class="body-text">
+          <p>I Dzogchen, den ældste af de tibetanske buddhistiske skoler, skelnes mellem <em>sems</em> og <em>sems nyid</em>. <em>Sems</em> er det almindelige sind, tankerne der kommer og går, følelserne der bølger, den endeløse strøm af indre tale. <em>Sems nyid</em> er sindets natur, det sted bag tankerne, der ikke selv tænker, men er det rum, hvori tanker kan opstå.</p>
+          <p>At genkende <em>sems nyid</em> er meditationens inderste opgave. Og denne genkendelse, siger Dzogchen-mestrene, sker altid i hjertet, ikke i hovedet. Hånden går til brystet. Den mest subtile bevidsthed, den klare lysbevidsthed der gennemtrænger alt, opholder sig i det, der kaldes <em>tsitta</em>, sanskrit-ordet for hjerte, som bruges side om side med <em>sems</em>.</p>
+          <p><em>Snying thig</em>, hjertedråber, udgør den inderste overlevering af Dzogchen. <em>Snying</em> betyder både hjerte og essens. At modtage <em>snying thig</em> er at modtage det destillerede, det der ikke kan forklares, kun gives videre fra hjerte til hjerte, i den stille nærhed, hvor én allerede ved, hvad den anden ved.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- gönül -->
+      <section class="section heart-entry">
+        <h3>gönül · Tyrkisk</h3>
+        <div class="body-text">
+          <p>Tyrkerne har lånt <em>qalb</em> fra arabisk og kalder det <em>kalp</em>, det fysiske hjerte, pumpen, det der slår. Men når de vil tale om det andet hjerte, det dybere, bruger de deres eget turkisk-mongolske ord: <em>gönül</em>.</p>
+          <p><em>Gönül</em> har ingen direkte oversættelse på dansk. Det er et sted og en kvalitet på én gang. Det er stedet, længslen bor. Det er også den åbenhed, der gør et menneske i stand til at rumme en anden. Når tyrkerne siger <em>gönülden</em>, fra <em>gönül</em>, mener de fra det sted, hvor man ikke længere kan lyve, selv om man ville.</p>
+          <p>Rumi, der skrev på persisk men hvis mystik er hjemmehørende i samme verden, brugte det persiske <em>del</em> for <em>gönül</em>. I hans poesi er det <em>del</em>, der vandrer, <em>del</em> der brænder, <em>del</em> der endelig finder hjem. I tyrkisk er udtrykket <em>gönül vermek</em>, at give sit <em>gönül</em>, det stærkest mulige udtryk for kærlighed. Ikke at forelske sig. Ikke at vælge. Men at give det sted fra sig, der gør én til den, man er.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- hridaya -->
+      <section class="section heart-entry">
+        <h3>hridaya · Sanskrit · हृदय</h3>
+        <div class="body-text">
+          <p>I Chandogya Upanishad, en af de ældste tekster i den indiske tradition, står en af verdens mest radikale sætninger: I hjertets hule er et lille rum. Dette rum er lige så stort som verdensrummet selv. Himlen, jorden, solen, månen, lynet, stjernerne, alt hvad der eksisterer, rummes i det rum.</p>
+          <p><em>Hridaya</em> bryder grammatisk op i tre stavelser, som gamle indiske lærere har læst som tre handlinger. <em>Hṛ</em>, at modtage. <em>Da</em>, at give. <em>Ya</em>, at cirkulere eller forbinde. Hjertet er ikke en ting. Det er denne treklang i bevægelse.</p>
+          <p>Prajñāpāramitā Hṛdaya Sūtra, Hjertesutraen, er den mahayanabuddhistiske tekst, der har rejst længst i verden. Den kaldes <em>hṛdaya</em> ikke fordi den handler om hjertet, men fordi den er hjertet af en meget større og længere tekst, koncentreret til nogle få sætninger. <em>Hṛdaya</em> bruges på sanskrit, som vi siger kernen eller essensen: det mindste, der rummer det største.</p>
+          <p>Mesteren Ramana Maharshi pegede på højre side af brystet som det åndelige hjertes plads, ikke den venstre, hvor organet sidder. Han sagde, at det ikke havde nogen fysisk placering overhovedet, men at hvis man endelig skulle pege, var det dér.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- na'au -->
+      <section class="section heart-entry">
+        <h3>na'au · Hawaiiansk</h3>
+        <div class="body-text">
+          <p>Hawaiianerne placerede ikke følelserne i brystet. De placerede dem i maven.</p>
+          <p><em>Na'au</em> betyder indvolde, tarmene, det indre. Og det betød samtidig sind, hjerte, følelser, den moralske natur, samvittigheden. Det er ikke brystet, der ved noget, det er maven. Når man vil huske noget udenad på hawaiiansk, siger man <em>ho'opa'ana'au</em>, at holde det fast i <em>na'au</em>. Når nogen er kortluntet, siger man <em>pōkole ka na'au</em>, at ens <em>na'au</em> er kort.</p>
+          <p>Ordet <em>puʻuwai</em> findes også på hawaiiansk og oversættes ofte som hjerte. Men hawaiianske sprogforskere peger på, at brugen af <em>puʻuwai</em> som følelsernes sæde først dukker op efter kontakten med vestlige missionærer i 1800-tallet. Det oprindelige er <em>na'au</em>.</p>
+          <p>Lyt til dit <em>na'au</em>, sagde de. Maven ved, før hjernen tror. Tarmen indeholder omkring fem hundrede millioner neuroner, et selvstændigt nervesystem, der producerer mere serotonin end hjernen. Hvad videnskaben nu kortlægger, havde maven vidst hele tiden.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- čhanté -->
+      <section class="section heart-entry">
+        <h3>čhanté · Lakota</h3>
+        <div class="body-text">
+          <p>På Lakota-sproget er <em>čhanté</em> det, der slår i brystet, og det, der bærer menneskets moralske kvalitet. Et modigt menneske kaldes <em>čhanté-t'inza</em>, stærk af <em>čhanté</em>. En gavmild kaldes <em>čhanté-waste</em>, god af <em>čhanté</em>. Dyden kan ikke adskilles fra det sted, den kommer fra.</p>
+          <p>Lakota-folket kalder Paha Sapa, Black Hills, for <em>Wamaka Ognaka y Čhanté</em>, hjertet af alt, der er. Det er ikke blot hellige bjerge. Det er det sted, hvor mange af deres oprindelsesfortællinger begynder, hvor bisonen først kom ud af jorden, hvor visionsquests finder sted. Lakota-sprogkyndige som Delphine Red Shirt har mindet om, at ikke-Lakota forfattere ofte bruger udtrykket uden at kunne det som et Lakota-begreb. Det lever kun fuldt i den verden, det kommer fra.</p>
+          <p>At kalde bjerge for hjertet af alt, der er, er at pege på, at hjertet for Lakota aldrig er kun inde i den enkelte. Det er også et sted i landskabet. Det er også relationen. Det er forbundenheden selv.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- xin -->
+      <section class="section heart-entry">
+        <h3>xin · Kinesisk · 心</h3>
+        <div class="body-text">
+          <p>Tegnet <em>xin</em> er et billede af selve organet, tre dråber blod, tre streger, der falder fra en skål. Det er ét af de ældste tegn i den kinesiske skrift og optræder i hundredvis af andre tegn som rod. Når hjerte står under noget, ændrer betydningen sig.</p>
+          <p>Konfucius og Mencius var de første, der udviklede en systematisk forståelse af <em>xin</em>. Mencius lærte, at ethvert menneske bærer fire spirer i sit <em>xin</em>. Medfølelsens spire, <em>ren</em>, menneskelighed. Skammens spire, <em>yi</em>, retskaffenhed. Ærbødighedens spire, <em>li</em>, rituel passende opførsel. Og evnen til at skelne ret og uret, <em>zhi</em>, visdom. Disse skal ikke skabes. De er der allerede. De skal bare dyrkes, som en gartner dyrker sprosser.</p>
+          <p>Xunzi, den tredje store konfucianer, var uenig. Han mente, at mennesket fødes med egoistiske drifter, og at <em>xin</em> skal opdrages af ritualer og læring for at blive godt. Diskussionen mellem Mencius og Xunzi, er menneskets natur god, og skal den bare udfoldes, eller er den rå, og skal den formes, har fortsat i kinesisk tænkning i over to tusind år.</p>
+          <p>Men begge er enige om ét: <em>xin</em> er både kognitivt og emotionelt. Kinesisk filosofi har aldrig delt tænkning og følelse op. Derfor oversætter moderne filosoffer <em>xin</em> som <em>heart-mind</em>, hjerte-sind, med bindestreg og uden valg. At ville vælge mellem de to er allerede at have misforstået spørgsmålet.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- moyo -->
+      <section class="section heart-entry">
+        <h3>moyo · Swahili</h3>
+        <div class="body-text">
+          <p>Swahili tales af omkring halvfjerds millioner mennesker i Østafrika, særligt Tanzania og Kenya. Sproget er en blanding af Bantu og arabisk, et kystens sprog, formet af årtusinders handel og udveksling.</p>
+          <p><em>Moyo</em> betyder hjerte og liv. At sige <em>moyo wangu</em>, mit hjerte, er et ømt tiltaleord. Men <em>moyo</em> bruges også bredere. <em>Kutoa ni moyo</em>, siger et swahili-ordsprog, at give er et spørgsmål om <em>moyo</em>, ikke om rigdom. <em>Kipendacho moyo ni dawa</em>, det hjertet elsker, er dets medicin. <em>Heri kufa macho kuliko kufa moyo</em>, bedre at miste sine øjne end at miste sit hjerte.</p>
+          <p><em>Moyo</em> forstås ikke som en privat besiddelse. Det slår i fællesskabet. Din rytme kendes af andres. En enlig <em>moyo</em> er et svækket <em>moyo</em>.</p>
+          <p>Kanga-klædet, som swahili-talende kvinder bærer, har ofte et moyo-ordsprog vævet ind nederst. Kvinden kan vælge sit kanga ud fra, hvad hendes <em>moyo</em> vil sige den dag, uden at åbne munden.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- yóllotl -->
+      <section class="section heart-entry">
+        <h3>yóllotl · Aztekisk · Nāhuatl</h3>
+        <div class="body-text">
+          <p>Nāhuatl, aztekernes sprog, tales stadig af omkring halvanden million mennesker i Mexico. <em>Yóllotl</em> kommer af roden <em>ollin</em>, som betyder bevægelse. Hjertet er ikke det centrale punkt, det stille organ, pumpen. Hjertet er bevægelse selv.</p>
+          <p>I aztekisk kosmologi lever vi netop nu i den femte sol, <em>Nāhui Ollin</em>, Fire Bevægelse, den nuværende verdenscyklus. Hver gang en tidligere sol er gået under, er det fordi bevægelsen er stoppet. Liv er bevægelse. Når bevægelsen ophører, ophører verden.</p>
+          <p>Den sande kunstner kaldte aztekerne <em>yolteotl</em>, et hjerte-blevet-gud. Ikke fordi kunstneren var hævet over andre, men fordi kunstneren arbejdede fra den samme bevægelse, som havde skabt verden selv. At skabe autentisk var at tillade <em>yóllotl</em> at udtrykke sig direkte, uden at forstyrrelsen fra det lille ego kom i vejen. <em>Yolteotl</em> malede, fordi billedet ønskede at blive til. <em>Yolteotl</em> dansede, fordi bevægelsen skulle ud.</p>
+          <p>Aztekerne havde også et parbegreb, <em>in ixtli in yóllotl</em>, ansigtet og hjertet. Et helt menneske var et menneske, der havde begge dele udviklet. Et ansigt, der kunne møde verden, og et hjerte, der var stort nok til at bære det, ansigtet mødte. At opdrage et barn var at hjælpe det med at finde sit ansigt og sit hjerte.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- inua -->
+      <section class="section heart-entry">
+        <h3>inua · Inuit</h3>
+        <div class="body-text">
+          <p><em>Inua</em> er ikke Inuit-ordet for hjerte. Det er Inuit-ordet for den levende kraft, der bor i alle ting. I mennesker, dyr, sten, vind, sø.</p>
+          <p>Hvert menneske har en <em>inua</em>. Hver sæl har en <em>inua</em>. Hvert fjeld har en <em>inua</em>. Selv handlinger og tilstande, søvn, søen, vinden, har en <em>inua</em>. Når jægeren har fanget en sæl, hælder han ferskvand i dens mund, så dens <em>inua</em> ikke skal tørste, og så den kan vende tilbage til sine og fortælle, at mennesket her handlede med respekt.</p>
+          <p>I Inuit-forståelsen består et menneske af flere sjæledele. <em>Inua</em> er den ene. <em>Anirniq</em>, åndedrættet, er en anden. <em>Tarniq</em>, den personlige sjæl, er den tredje. Og <em>atiq</em>, navnesjælen, der forbinder en til de døde slægtninge, man er opkaldt efter, er den fjerde. Alle fire hører til det, vi ville kalde hjerte. Ingen af dem er det alene.</p>
+          <p>At leve i verden er at leve i en forsamling af besjælede væsener, ikke i et landskab af ting. Det, jeg står i samtale med, er aldrig kun menneskeligt. Og derfor kan jeg ikke længere behandle noget som kun materiale, for intet her er kun materiale.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- croí -->
+      <section class="section heart-entry">
+        <h3>croí · Irsk</h3>
+        <div class="body-text">
+          <p><em>Croí</em> er det almindelige irske ord for hjerte, arvet direkte fra oldirsk <em>cride</em>, fra en fælles indoeuropæisk rod, det samme ord der har givet os latinsk <em>cor</em>, græsk <em>kardia</em>, tysk <em>Herz</em> og engelsk <em>heart</em>.</p>
+          <p>Irsk har gjort noget særligt ved sit hjerteord. I tiltaleformer bruger irsk den vokative partikel <em>a</em>: <em>a chroí</em>, bogstaveligt du hjerte, bruges til en elsket. En mor siger det til sit barn. Et ældre menneske siger det til et yngre. Det bærer både ømhed og ophøjelse på én gang.</p>
+          <p>Det kendteste irske hjerteudtryk er <em>a chuisle mo chroí</em>, pulsen af mit hjerte. <em>Cuisle</em> er pulsåren, det sted hvor blodet strømmer i en bølge, der kan føles udefra. At kalde nogen for pulsen af ens hjerte er ikke blot at sige du er mig kær. Det er at sige du er dét ved mig, der holder mig i live.</p>
+          <p><em>Maireann croí éadrom a bhfad</em>, et let hjerte lever længe. <em>Lig dod' chroí tú a threorú</em>, lad dit hjerte lede dig. <em>Tá tú im' chroí i gcónaí</em>, du er altid i mit hjerte. Og der er ordet <em>cridhe</em> i skotsk gælisk, som bruges på præcis samme måde, som om to sprog havde delt et hjerte mellem sig.</p>
+        </div>
+      </section>
+
+      <div class="heart-separator">· · ·</div>
+
+      <!-- ngākau -->
+      <section class="section heart-entry">
+        <h3>ngākau · Māori</h3>
+        <div class="body-text">
+          <p>I māori-forståelsen er et menneske ikke en ting. Det er fire dele, der skal være i balance. <em>Tinana</em>, kroppen. <em>Hinengaro</em>, sindet og bevidstheden. <em>Wairua</em>, ånden, det udødelige. Og <em>ngākau</em>, hjertet, følelsernes og karakterens sæde.</p>
+          <p><em>Ngākau</em> står aldrig alene. Det findes i sammensætninger. <em>Ngākau pono</em>, et troværdigt hjerte. <em>Ngākau māhaki</em>, et ydmygt hjerte. <em>Ngākau nui</em>, et storsindet hjerte. <em>Ngākau aroha</em>, et kærligt hjerte. <em>Ngākau pōuri</em>, et tungt hjerte. At tale om en persons <em>ngākau</em> er at tale om deres karakter, men fra et bestemt sted. Ikke fra hvad de gør, men fra hvordan de føler sig kaldet.</p>
+          <p>Der er et ordsprog på māori: <em>He kokona o te whare i kitea, he kokona o te ngākau e kore i kitea.</em> Et hjørne af huset kan ses og undersøges, men hjørnerne af <em>ngākau</em> kan ikke ses. Der er altid noget i hjertet, der undslipper blikket. Selv ens eget.</p>
+          <p><em>He oranga ngākau, he hikinga wairua.</em> Når det rører hjertet, løfter det ånden. Det ene kan ikke ske uden det andet. <em>Wairua</em> bliver først rigtig vakt, når <em>ngākau</em> er blevet berørt.</p>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="section closing">
+        <div class="body-text">
+          <p>Fjorten hjerter. Fjorten sprog. Fjorten forskellige måder at tænke menneskets inderste.</p>
+          <p>Og alligevel, når man læser dem ved siden af hinanden, begynder noget at træde frem. En vedvarende bevægelse. En modtagelighed, der er lige så vigtig som det at give. En stilhed, der ikke er tomhed. En forbundenhed, der ikke kun går indad, men også udad, til landskaber, til fællesskaber, til alt det, der lever.</p>
+          <p>Hvert sprog peger mod det samme sted, men ad sin egen vej. Og når vi lytter til dem alle, hører vi noget, vi måske ikke kunne have hørt alene: at vores eget ord hjerte rummer mere, end vi troede. Og at vi aldrig kan være færdige med at lære det, vi allerede bor i.</p>
+        </div>
+      </section>
+
+    </div>
+  </div><!-- /screen:hjerter -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="scenes.js?v=7"></script>
+  <script src="scenes.js?v=8"></script>
+
+  <nav class="screen-nav">
+    <a href="#veje" data-nav="veje">Hjertets Veje</a>
+    <a href="#embryologi" data-nav="embryologi">Embryologien</a>
+    <a href="#rejse" data-nav="rejse">Din rejse</a>
+    <a href="#hjerter" data-nav="hjerter">De andre hjerter</a>
+  </nav>
+
+  <script>
+  // Screen navigation
+  (function() {
+    var screens = document.querySelectorAll('.screen');
+    var navLinks = document.querySelectorAll('.screen-nav a');
+    function showScreen(name) {
+      screens.forEach(function(s) { s.hidden = (s.dataset.screen !== name); });
+      navLinks.forEach(function(a) { a.classList.toggle('active', a.dataset.nav === name); });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    function handleHashChange() {
+      var hash = window.location.hash.slice(1) || 'veje';
+      var valid = ['veje', 'embryologi', 'rejse', 'hjerter'];
+      showScreen(valid.indexOf(hash) !== -1 ? hash : 'veje');
+    }
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
+  })();
+
+  // Rejse localStorage
+  (function() {
+    var KEY = 'hjertets-veje-rejse';
+    function save(id, text) {
+      var data = JSON.parse(localStorage.getItem(KEY) || '{}');
+      data[id] = text;
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+    function load() {
+      var data = JSON.parse(localStorage.getItem(KEY) || '{}');
+      document.querySelectorAll('textarea[data-reflection]').forEach(function(t) {
+        if (data[t.dataset.reflection]) t.value = data[t.dataset.reflection];
+      });
+    }
+    document.querySelectorAll('textarea[data-reflection]').forEach(function(t) {
+      var timer;
+      t.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() { save(t.dataset.reflection, t.value); }, 500);
+      });
+    });
+    load();
+  })();
+  </script>
 </body>
 </html>
