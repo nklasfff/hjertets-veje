@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Hjertets Veje — Sonja Aclon & Niklas Patursson · 2026</title>
 <meta name="description" content="Temadag om hjertet med Sonja Aclon og Niklas Patursson. Aarhus 17. april · Roskilde 24. april 2026." />
 
@@ -361,6 +361,13 @@
       width: calc(100% + 4rem);
       margin-left: -2rem;
       height: 48vh;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .three-interlude {
+      height: 50vh;
+      min-height: 300px;
     }
   }
 
@@ -1226,7 +1233,7 @@
   </div><!-- /screen:hjerter -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="scenes.js?v=8"></script>
+  <script src="scenes.js?v=9"></script>
 
   <nav class="screen-nav">
     <a href="#veje" data-nav="veje">Hjertets Veje</a>

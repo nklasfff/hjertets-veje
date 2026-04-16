@@ -102,17 +102,28 @@ function initScene(containerId, fov, loopDuration) {
     loopDuration: loopDuration || 14,
     width: width,
     height: height,
+    baseZ: null,
   };
 
-  // Resize
-  window.addEventListener('resize', () => {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+  // Responsive camera: pulls camera back on portrait/narrow screens
+  state.updateCamera = function() {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    const aspect = w / h;
+    const portraitFactor = Math.max(1, 1.25 / aspect);
+    if (state.baseZ) {
+      camera.position.z = state.baseZ * portraitFactor;
+    }
     state.width = w;
     state.height = h;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
+  };
+
+  // Resize
+  window.addEventListener('resize', () => {
+    state.updateCamera();
   });
 
   // IntersectionObserver: nulstil startTime når scenen kommer i view
@@ -144,6 +155,12 @@ function loopElapsed(state) {
     elapsed = 0;
   }
   return elapsed;
+}
+
+/* ---------- MOBILE SCALE ----------
+   Returns 0..1 factor for scaling wide formations on narrow screens. */
+function mobileScale() {
+  return Math.min(1, window.innerWidth / 700);
 }
 
 /* ---------- SCROLL-REVEAL (sektioner) ----------
@@ -295,6 +312,8 @@ function initScene1() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 6);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   const CLUSTERS = 12;
   const PER_CLUSTER = 80;
@@ -319,7 +338,7 @@ function initScene1() {
     // Unik retning for hvert cluster — fordelt jævnt på kuglen
     const phi   = Math.acos(1 - 2 * (c + 0.5) / CLUSTERS);
     const theta = Math.PI * (1 + Math.sqrt(5)) * c; // golden angle
-    const originRadius = 8 + Math.random() * 4;     // 8-12
+    const originRadius = (8 + Math.random() * 4) * (0.7 + 0.3 * mobileScale());     // 8-12, scaled for mobile
     const ox = originRadius * Math.sin(phi) * Math.cos(theta);
     const oy = originRadius * Math.sin(phi) * Math.sin(theta);
     const oz = originRadius * Math.cos(phi) * 0.4;  // fladere på z
@@ -437,6 +456,8 @@ function initScene2() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 5);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   const COUNT = 2500;
 
@@ -706,6 +727,8 @@ function initScene3() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 5.5);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   // ---- 1500 partikler i hjerteform ----
   const COUNT = 1500;
@@ -988,6 +1011,8 @@ function initScene4() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0.1, 5.3);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   const COUNT = 1500;
   const positions    = new Float32Array(COUNT * 3);
@@ -1133,6 +1158,8 @@ function initScene5() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 6);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   // ---- Fælles geometri-helper: cubic bezier ----
   const rightBezier = {
@@ -1344,6 +1371,7 @@ function initScene5() {
 
       const b = streamArm[i] === 0 ? leftBezier : rightBezier;
       cubicBezier(b, t, tmpOut);
+      tmpOut[0] *= mobileScale(); // narrow arms on small screens
 
       // Blid wobble vinkelret (enkel tilnærmelse), roligt tempo
       const wob = 0.05;
@@ -1369,7 +1397,7 @@ function initScene5() {
       const cx = handCenters[h][0];
       const cy = handCenters[h][1];
       const cz = handCenters[h][2];
-      hhPos[i3]     = cx + (handBase[i3]     - cx) * handBreath;
+      hhPos[i3]     = (cx + (handBase[i3]     - cx) * handBreath) * mobileScale();
       hhPos[i3 + 1] = cy + (handBase[i3 + 1] - cy) * handBreath;
       hhPos[i3 + 2] = cz + (handBase[i3 + 2] - cz) * handBreath;
     }
@@ -1406,6 +1434,8 @@ function initScene6() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, -0.15, 5.5);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   // ---- Timing ----
   const DROP_STARTS     = [0.0, 1.5, 3.0]; // sekventiel tænding over 0-6s
@@ -1664,6 +1694,8 @@ function initScene7() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 6);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   // 20 hjerter × 80 partikler = 1600
   const HEARTS = 20;
@@ -1699,7 +1731,7 @@ function initScene7() {
     // Home: spredt på ring/felt
     const phi = Math.acos(1 - 2 * (h + 0.5) / HEARTS);
     const theta = Math.PI * (1 + Math.sqrt(5)) * h; // golden angle
-    const r = 2.0 + Math.random() * 1.0;
+    const r = (2.0 + Math.random() * 1.0) * (0.7 + 0.3 * mobileScale());
     heartHome.push({
       x: r * Math.sin(phi) * Math.cos(theta),
       y: r * Math.sin(phi) * Math.sin(theta) * 0.7,
@@ -1875,6 +1907,8 @@ function initScene8() {
   const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 6);
+  state.baseZ = camera.position.z;
+  state.updateCamera();
 
   // Alle kursets farver
   const PAL = [
