@@ -2193,115 +2193,110 @@ function initEmbryoScene() {
    SCENE: REJSE — stille baggrundsfelt af svævende partikler
    ============================================================ */
 function initRejseScene() {
-  /* Rejsen indad. Partikler flyder langs en spiral fra yderkant
-     mod et varmt, lysende centrum — introspektionens vej.
-     Når de når centrum, genfødes de i periferien. */
+  /* En sti der bevæger sig gennem rummet. Partikler flyder
+     langs en lang, bugtende vej — ikke mod et mål, men som
+     selve bevægelsen af at gå. Abstrakt, dynamisk, stille. */
   const ctx = initScene('rejseScene', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
-  camera.position.set(0, 0, 5);
-  state.baseZ = 5;
+  camera.position.set(0, 0, 5.5);
+  state.baseZ = 5.5;
   state.updateCamera();
 
-  const COUNT = 1200;
+  const COUNT = 1400;
   const positions = new Float32Array(COUNT * 3);
   const colors    = new Float32Array(COUNT * 3);
-  // Per-partikel: spiralposition (0=ydre, 1=centrum)
-  const spiralPhase = new Float32Array(COUNT);
-  const spiralSpeed = new Float32Array(COUNT);
-  const spiralAngle = new Float32Array(COUNT);
+  const initPhase = new Float32Array(COUNT); // 0-1 langs stien
+  const speed     = new Float32Array(COUNT);
+  const wobPhase  = new Float32Array(COUNT);
 
-  // Centrum-gløds partikler (de sidste 100)
-  const CORE = 100;
-  const FLOW = COUNT - CORE;
-
-  const colOuter = new THREE.Color(PALETTE.warmGrey);
-  const colMid   = new THREE.Color(PALETTE.guld);
-  const colInner = new THREE.Color(PALETTE.rosaLight);
-  const colCore  = new THREE.Color(0xfff0d0);
+  const colA = new THREE.Color(PALETTE.bordeaux);
+  const colB = new THREE.Color(PALETTE.guld);
+  const colC = new THREE.Color(PALETTE.rosa);
 
   for (let i = 0; i < COUNT; i++) {
+    initPhase[i] = Math.random();
+    speed[i] = 0.045 + Math.random() * 0.02;
+    wobPhase[i] = Math.random() * Math.PI * 2;
     const i3 = i * 3;
-    if (i < FLOW) {
-      // Spiral-partikler: fordelt langs spiralen
-      spiralPhase[i] = Math.random(); // 0=ydre, 1=center
-      spiralSpeed[i] = 0.04 + Math.random() * 0.025; // phase/s
-      spiralAngle[i] = Math.random() * Math.PI * 2;
-    } else {
-      // Core: stationære ved centrum
-      const phi = Math.acos(2 * Math.random() - 1);
-      const theta = Math.random() * Math.PI * 2;
-      const r = Math.pow(Math.random(), 0.4) * 0.2;
-      positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
-      positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i3 + 2] = r * Math.cos(phi);
-      const br = 0.9 + Math.random() * 0.15;
-      colors[i3] = colCore.r*br; colors[i3+1] = colCore.g*br; colors[i3+2] = colCore.b*br;
-    }
+    const br = 0.85 + Math.random() * 0.2;
+    // Farve blandes ved init — partikler bærer hele paletten
+    const t = Math.random();
+    const c = t < 0.33 ? colA : t < 0.66 ? colB : colC;
+    colors[i3] = c.r*br; colors[i3+1] = c.g*br; colors[i3+2] = c.b*br;
   }
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
-
   const mat = new THREE.PointsMaterial({
-    size: 0.1, map: softCircleTexture(), vertexColors: true,
+    size: 0.09, map: softCircleTexture(), vertexColors: true,
     transparent: true, opacity: 0.9, sizeAttenuation: true,
     depthWrite: false, blending: THREE.NormalBlending,
   });
   const points = new THREE.Points(geo, mat);
   scene.add(points);
 
+  // Stien: en lang kurve defineret som kubisk bezier-kæde
+  // 4 segmenter der tilsammen danner en S-formet vej i 3D
+  const PATH_POINTS = [
+    {x:-2.4, y:-1.5, z: 0.3},
+    {x:-1.2, y:-0.5, z:-0.4},
+    {x:-0.3, y: 0.5, z: 0.5},
+    {x: 0.5, y: 1.2, z:-0.3},
+    {x: 1.3, y: 0.3, z: 0.4},
+    {x: 2.0, y:-0.8, z:-0.2},
+    {x: 2.5, y:-1.6, z: 0.1},
+  ];
+
+  function pathPosition(t) {
+    // Catmull-Rom-agtig interpolation langs punkterne
+    const n = PATH_POINTS.length - 1;
+    const f = t * n;
+    const idx = Math.min(Math.floor(f), n - 1);
+    const local = f - idx;
+    const p0 = PATH_POINTS[Math.max(idx-1, 0)];
+    const p1 = PATH_POINTS[idx];
+    const p2 = PATH_POINTS[Math.min(idx+1, n)];
+    const p3 = PATH_POINTS[Math.min(idx+2, n)];
+    // Catmull-Rom spline
+    const t2 = local * local, t3 = t2 * local;
+    function cr(a,b,c,d) {
+      return 0.5*((-a+3*b-3*c+d)*t3 + (2*a-5*b+4*c-d)*t2 + (-a+c)*local + 2*b);
+    }
+    return {
+      x: cr(p0.x,p1.x,p2.x,p3.x),
+      y: cr(p0.y,p1.y,p2.y,p3.y),
+      z: cr(p0.z,p1.z,p2.z,p3.z),
+    };
+  }
+
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
     const elapsed = loopElapsed(state);
     const pos = geo.attributes.position.array;
-    const col = geo.attributes.color.array;
 
-    const coreBreath = 1 + Math.sin(elapsed * Math.PI * 2 / 10) * 0.08;
-
-    for (let i = 0; i < FLOW; i++) {
+    for (let i = 0; i < COUNT; i++) {
       const i3 = i * 3;
-      // Fase avancerer: 0→1, wrap ved 1 (genfødes i periferien)
-      let ph = (spiralPhase[i] + elapsed * spiralSpeed[i]) % 1;
-      // Radius: ydre (ph=0) → centrum (ph=1)
-      const r = (1 - ph) * 2.3;
-      // Spiralvinkel: roterer med ph
-      const angle = spiralAngle[i] + ph * Math.PI * 5; // 2.5 omdrejninger
-      // 3D spiral (let z-variation)
-      pos[i3]     = r * Math.cos(angle);
-      pos[i3 + 1] = r * Math.sin(angle) * 0.75;
-      pos[i3 + 2] = Math.sin(ph * Math.PI) * 0.35 * Math.sin(angle * 0.5);
-
-      // Farve: varm-grå ydre → guld midtvejs → rosa/lys ved centrum
-      if (ph < 0.5) {
-        const t = ph * 2;
-        col[i3]=colOuter.r+(colMid.r-colOuter.r)*t;
-        col[i3+1]=colOuter.g+(colMid.g-colOuter.g)*t;
-        col[i3+2]=colOuter.b+(colMid.b-colOuter.b)*t;
-      } else {
-        const t = (ph - 0.5) * 2;
-        col[i3]=colMid.r+(colInner.r-colMid.r)*t;
-        col[i3+1]=colMid.g+(colInner.g-colMid.g)*t;
-        col[i3+2]=colMid.b+(colInner.b-colMid.b)*t;
-      }
-    }
-    // Core ånder
-    for (let i = FLOW; i < COUNT; i++) {
-      const i3 = i * 3;
-      const phi = Math.acos(2 * ((i-FLOW)/CORE) - 1);
-      const theta = (i-FLOW) * 2.399;
-      const r = 0.15 * coreBreath;
-      pos[i3]     = r * Math.sin(phi) * Math.cos(theta + elapsed*0.2);
-      pos[i3 + 1] = r * Math.sin(phi) * Math.sin(theta + elapsed*0.2);
-      pos[i3 + 2] = r * Math.cos(phi);
+      // Fase langs stien — wraps, partikler flyder kontinuerligt
+      const ph = (initPhase[i] + elapsed * speed[i]) % 1;
+      const p = pathPosition(ph);
+      // Lille perpendiculær wobble for bredde på stien
+      const wob = 0.12;
+      const wx = Math.sin(elapsed * 0.6 + wobPhase[i]) * wob;
+      const wy = Math.cos(elapsed * 0.5 + wobPhase[i] * 1.3) * wob;
+      const wz = Math.sin(elapsed * 0.4 + wobPhase[i] * 0.7) * wob * 0.7;
+      pos[i3]     = p.x + wx;
+      pos[i3 + 1] = p.y + wy;
+      pos[i3 + 2] = p.z + wz;
     }
 
     geo.attributes.position.needsUpdate = true;
-    geo.attributes.color.needsUpdate = true;
-    points.rotation.y = elapsed * 0.015;
+    // Blid rotation så man ser stien fra forskellige vinkler
+    points.rotation.y = Math.sin(elapsed * 0.12) * 0.15;
+    points.rotation.x = Math.sin(elapsed * 0.09 + 0.5) * 0.08;
     renderer.render(scene, camera);
   }
   animate();
