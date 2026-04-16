@@ -2073,6 +2073,9 @@ function initScene8() {
    SCENE: EMBRYOLOGI — celler der vandrer ind og samler sig
    ============================================================ */
 function initEmbryoScene() {
+  /* Bevægelse der ER form. 8 strømme af partikler i toroidale
+     baner — væske-dynamikker der krydser hinanden og skaber
+     metaboliske felter. "Vi er bevægelse der har antaget form." */
   const ctx = initScene('embryoScene', 50, 14);
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
@@ -2081,163 +2084,106 @@ function initEmbryoScene() {
   state.baseZ = 5;
   state.updateCamera();
 
-  var COUNT = 2000;
-  var positions = new Float32Array(COUNT * 3);
-  var colors = new Float32Array(COUNT * 3);
-  var phases = new Float32Array(COUNT);
-  var tubeAngles = new Float32Array(COUNT);   // angle around tube
-  var tubeHeights = new Float32Array(COUNT);  // position along tube axis
-  var radii = new Float32Array(COUNT);        // individual radius offsets
+  const STREAMS = 8;
+  const PER = 250;
+  const COUNT = STREAMS * PER;
 
-  var palette = [PALETTE.rosaLight, PALETTE.guld, PALETTE.bordeaux, PALETTE.creme, PALETTE.rosa, PALETTE.guldLight];
+  const positions = new Float32Array(COUNT * 3);
+  const colors    = new Float32Array(COUNT * 3);
+  const streamIdx = new Int8Array(COUNT);
+  const particleU = new Float32Array(COUNT);
+  const particleV = new Float32Array(COUNT);
 
-  for (var i = 0; i < COUNT; i++) {
-    var i3 = i * 3;
-    // Scattered start positions — cells spread across space
-    positions[i3]     = (Math.random() - 0.5) * 8;
-    positions[i3 + 1] = (Math.random() - 0.5) * 6;
-    positions[i3 + 2] = (Math.random() - 0.5) * 4;
-
-    phases[i] = Math.random() * Math.PI * 2;
-    tubeAngles[i] = Math.random() * Math.PI * 2;
-    tubeHeights[i] = (Math.random() - 0.5) * 2; // -1 to 1 along tube
-    radii[i] = 0.3 + Math.random() * 0.15;
-
-    var c = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
-    var br = 0.8 + Math.random() * 0.25;
-    colors[i3]     = c.r * br;
-    colors[i3 + 1] = c.g * br;
-    colors[i3 + 2] = c.b * br;
+  // 8 strømme med forskellige toroidale baner, hastigheder, tilts
+  const streams = [];
+  for (let s = 0; s < STREAMS; s++) {
+    const tilt = (s / STREAMS) * Math.PI;
+    streams.push({
+      R: 1.1 + Math.sin(s * 1.4) * 0.35,
+      r: 0.28 + Math.cos(s * 0.8) * 0.12,
+      tiltX: Math.sin(tilt) * 0.7,
+      tiltZ: Math.cos(tilt) * 0.5,
+      speed: 0.18 + (s % 4) * 0.04,
+      phase: s * Math.PI * 2 / STREAMS,
+    });
   }
 
-  var geo = new THREE.BufferGeometry();
+  const pal = [PALETTE.rosaLight,PALETTE.guld,PALETTE.bordeaux,PALETTE.rosa,PALETTE.guldLight,PALETTE.creme,PALETTE.amber,PALETTE.sand];
+
+  for (let s = 0; s < STREAMS; s++) {
+    const col = new THREE.Color(pal[s % pal.length]);
+    for (let p = 0; p < PER; p++) {
+      const i = s * PER + p;
+      const i3 = i * 3;
+      streamIdx[i] = s;
+      particleU[i] = (p / PER) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
+      particleV[i] = Math.random() * Math.PI * 2;
+      positions[i3] = (Math.random() - 0.5) * 7;
+      positions[i3+1] = (Math.random() - 0.5) * 5;
+      positions[i3+2] = (Math.random() - 0.5) * 3;
+      const br = 0.8 + Math.random() * 0.25;
+      colors[i3] = col.r*br; colors[i3+1] = col.g*br; colors[i3+2] = col.b*br;
+    }
+  }
+
+  const startPos = new Float32Array(positions);
+
+  const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  var mat = new THREE.PointsMaterial({
-    size: 0.08,
-    map: softCircleTexture(),
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.88,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.NormalBlending,
+  const mat = new THREE.PointsMaterial({
+    size: 0.08, map: softCircleTexture(), vertexColors: true,
+    transparent: true, opacity: 0.88, sizeAttenuation: true,
+    depthWrite: false, blending: THREE.NormalBlending,
   });
-
-  var points = new THREE.Points(geo, mat);
+  const points = new THREE.Points(geo, mat);
   scene.add(points);
-
-  var startPositions = new Float32Array(positions);
-
-  // Compute tube position for a particle given the tube's current bend state
-  function tubePosition(h, angle, r, bendAmount, loopAmount) {
-    // h: -1..1 along tube, angle: around tube, r: radius
-    // Straight tube along Y axis, then bend into C-shape, then loop further
-    var tubeLen = 2.5;
-    var y = h * tubeLen;
-    var x = Math.cos(angle) * r;
-    var z = Math.sin(angle) * r;
-
-    // Apply bending: curve the tube in x-y plane
-    // bendAmount 0 = straight, 1 = C-shape
-    var bendAngle = (h + 1) * 0.5 * Math.PI * bendAmount; // 0 to PI along tube
-    var bendR = tubeLen / Math.PI; // radius of curvature
-    if (bendAmount > 0.01) {
-      var straightY = y;
-      var straightX = x;
-      // Rotate the tube axis into a curve
-      var curveX = Math.sin(bendAngle) * bendR * bendAmount + x * (1 - bendAmount * 0.3);
-      var curveY = -Math.cos(bendAngle) * bendR * bendAmount + y * (1 - bendAmount);
-      x = curveX;
-      y = curveY;
-    }
-
-    // Additional looping — further fold into organic shape
-    if (loopAmount > 0.01) {
-      var loopAngle = (h + 1) * 0.5 * Math.PI * 1.5 * loopAmount;
-      x += Math.sin(loopAngle * 1.3) * 0.4 * loopAmount;
-      y += Math.cos(loopAngle * 0.7) * 0.3 * loopAmount;
-      z += Math.sin(loopAngle * 0.9 + angle) * 0.2 * loopAmount;
-    }
-
-    return { x: x, y: y, z: z };
-  }
 
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
+    const elapsed = loopElapsed(state);
+    const pos = geo.attributes.position.array;
 
-    var elapsed = loopElapsed(state);
-    var pos = geo.attributes.position.array;
+    // Organisering: 0-4s kaos→strømme, 4-14s strømmende form
+    const orgT = easeInOutQuad(Math.min(1, elapsed / 4));
+    // Åndedræt i den levende form
+    const breath = 1 + Math.sin(elapsed * Math.PI * 2 / 8) * 0.04;
 
-    // Phase timings
-    // Phase 1: 0-3s — cells migrate toward central axis (tube formation zone)
-    // Phase 2: 3-6s — form tube, slow rotation
-    // Phase 3: 6-9s — tube bends and folds (cardiac looping)
-    // Phase 4: 9-12s — settle into living form, pulse begins
-    // Phase 5: 12-14s — breathing/pulsing, then loop
+    for (let i = 0; i < COUNT; i++) {
+      const i3 = i * 3;
+      const s = streamIdx[i];
+      const st = streams[s];
 
-    var migrateT = Math.min(1, elapsed / 3);                       // 0-3s: 0→1
-    var tubeT = Math.min(1, Math.max(0, (elapsed - 2) / 3));       // 2-5s: 0→1 (overlap for smooth transition)
-    var bendT = Math.min(1, Math.max(0, (elapsed - 5) / 3));       // 5-8s: 0→1
-    var loopT = Math.min(1, Math.max(0, (elapsed - 7) / 2.5));     // 7-9.5s: 0→1
-    var settleT = Math.min(1, Math.max(0, (elapsed - 9) / 2));     // 9-11s: 0→1
-    var pulseActive = elapsed > 10 ? 1 : 0;
+      // Strøm-position: toroidal bane der konstant bevæger sig
+      const u = particleU[i] + elapsed * st.speed;
+      const v = particleV[i];
+      const R = st.R * breath;
+      const r = st.r;
 
-    var migrateE = easeOutCubic(migrateT);
-    var tubeE = easeInOutQuad(tubeT);
-    var bendE = easeInOutQuad(bendT);
-    var loopE = easeInOutQuad(loopT);
+      // Torus-coords med tilt
+      let tx = (R + r * Math.cos(v)) * Math.cos(u);
+      let ty = (R + r * Math.cos(v)) * Math.sin(u);
+      let tz = r * Math.sin(v);
+      // Tilt strømmen
+      const cosT = Math.cos(st.tiltX), sinT = Math.sin(st.tiltX);
+      const ry = ty * cosT - tz * sinT;
+      const rz = ty * sinT + tz * cosT;
+      ty = ry; tz = rz;
+      const cosZ = Math.cos(st.tiltZ), sinZ = Math.sin(st.tiltZ);
+      const rx = tx * cosZ - ty * sinZ;
+      const ry2 = tx * sinZ + ty * cosZ;
+      tx = rx; ty = ry2;
 
-    // Pulse: gentle heartbeat once settled
-    var pulse = pulseActive ? 1 + Math.sin((elapsed - 10) * Math.PI * 2 / 1.2) * 0.06 * Math.min(1, (elapsed - 10) / 2) : 1;
-
-    for (var i = 0; i < COUNT; i++) {
-      var i3 = i * 3;
-      var ph = phases[i];
-      var h = tubeHeights[i];
-      var ang = tubeAngles[i];
-      var r = radii[i];
-
-      // Cell wander during migration — organic, searching movement
-      var wanderX = Math.sin(elapsed * 0.8 + ph * 3) * 0.15 * (1 - tubeE);
-      var wanderY = Math.cos(elapsed * 0.6 + ph * 2.5) * 0.12 * (1 - tubeE);
-      var wanderZ = Math.sin(elapsed * 0.5 + ph * 1.8) * 0.1 * (1 - tubeE);
-
-      // Tube target position with current bend/loop state
-      var tp = tubePosition(h, ang, r * pulse, bendE, loopE);
-
-      // Midpoint: gathered near axis but not yet in tube form
-      var axisX = Math.cos(ang) * r * 1.5 + wanderX;
-      var axisY = h * 1.5 + wanderY;
-      var axisZ = Math.sin(ang) * r * 1.5 + wanderZ;
-
-      // Phase 1: scatter → axis approach
-      var sx = startPositions[i3]     * (1 - migrateE) + axisX * migrateE;
-      var sy = startPositions[i3 + 1] * (1 - migrateE) + axisY * migrateE;
-      var sz = startPositions[i3 + 2] * (1 - migrateE) + axisZ * migrateE;
-
-      // Phase 2+: axis → tube (and tube morphs with bend/loop)
-      pos[i3]     = sx * (1 - tubeE) + tp.x * tubeE;
-      pos[i3 + 1] = sy * (1 - tubeE) + tp.y * tubeE;
-      pos[i3 + 2] = sz * (1 - tubeE) + tp.z * tubeE;
-
-      // Subtle individual drift in final settled state
-      if (settleT > 0) {
-        pos[i3]     += Math.sin(elapsed * 0.3 + ph) * 0.02 * settleT;
-        pos[i3 + 1] += Math.cos(elapsed * 0.25 + ph * 1.3) * 0.02 * settleT;
-      }
+      // Blend fra kaotisk start til strømmende form
+      pos[i3]     = startPos[i3]     * (1 - orgT) + tx * orgT;
+      pos[i3 + 1] = startPos[i3 + 1] * (1 - orgT) + ty * orgT;
+      pos[i3 + 2] = startPos[i3 + 2] * (1 - orgT) + tz * orgT;
     }
 
     geo.attributes.position.needsUpdate = true;
-
-    // Rotation: gentle during migration, more active during bending, calms down
-    var rotSpeed = 0.05 + bendE * 0.12 - settleT * 0.08;
-    points.rotation.y += rotSpeed * 0.016;
-    points.rotation.x = Math.sin(elapsed * 0.15) * 0.15 * (0.3 + bendE * 0.7);
-    points.rotation.z = Math.sin(elapsed * 0.1 + 1) * 0.08 * bendE * (1 - settleT * 0.6);
-
+    points.rotation.y = Math.sin(elapsed * 0.1) * 0.2;
+    points.rotation.x = Math.sin(elapsed * 0.07 + 0.5) * 0.12;
     renderer.render(scene, camera);
   }
   animate();
@@ -2247,86 +2193,115 @@ function initEmbryoScene() {
    SCENE: REJSE — stille baggrundsfelt af svævende partikler
    ============================================================ */
 function initRejseScene() {
-  var ctx = initScene('rejseScene', 50, 14);
+  /* Rejsen indad. Partikler flyder langs en spiral fra yderkant
+     mod et varmt, lysende centrum — introspektionens vej.
+     Når de når centrum, genfødes de i periferien. */
+  const ctx = initScene('rejseScene', 50, 14);
   if (!ctx) return;
-  var scene = ctx.scene, camera = ctx.camera, renderer = ctx.renderer, state = ctx.state;
+  const { scene, camera, renderer, state } = ctx;
 
   camera.position.set(0, 0, 5);
   state.baseZ = 5;
   state.updateCamera();
 
-  var COUNT = 1200;
-  var positions = new Float32Array(COUNT * 3);
-  var colors = new Float32Array(COUNT * 3);
-  var phases = new Float32Array(COUNT);
-  var driftSpeeds = new Float32Array(COUNT);
+  const COUNT = 1200;
+  const positions = new Float32Array(COUNT * 3);
+  const colors    = new Float32Array(COUNT * 3);
+  // Per-partikel: spiralposition (0=ydre, 1=centrum)
+  const spiralPhase = new Float32Array(COUNT);
+  const spiralSpeed = new Float32Array(COUNT);
+  const spiralAngle = new Float32Array(COUNT);
 
-  var palette = [PALETTE.guld, PALETTE.rosaLight, PALETTE.warmGrey, PALETTE.guldLight, PALETTE.creme, PALETTE.rosa];
+  // Centrum-gløds partikler (de sidste 100)
+  const CORE = 100;
+  const FLOW = COUNT - CORE;
 
-  for (var i = 0; i < COUNT; i++) {
-    var i3 = i * 3;
-    // Soft nebula distribution — denser in center
-    var phi = Math.acos(2 * Math.random() - 1);
-    var theta = Math.random() * Math.PI * 2;
-    var r = Math.pow(Math.random(), 0.5) * 2.2;
-    positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
-    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
-    positions[i3 + 2] = r * Math.cos(phi) * 0.5;
-    phases[i] = Math.random() * Math.PI * 2;
-    driftSpeeds[i] = 0.03 + Math.random() * 0.04;
+  const colOuter = new THREE.Color(PALETTE.warmGrey);
+  const colMid   = new THREE.Color(PALETTE.guld);
+  const colInner = new THREE.Color(PALETTE.rosaLight);
+  const colCore  = new THREE.Color(0xfff0d0);
 
-    var c = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
-    var br = 0.8 + Math.random() * 0.25;
-    colors[i3]     = c.r * br;
-    colors[i3 + 1] = c.g * br;
-    colors[i3 + 2] = c.b * br;
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    if (i < FLOW) {
+      // Spiral-partikler: fordelt langs spiralen
+      spiralPhase[i] = Math.random(); // 0=ydre, 1=center
+      spiralSpeed[i] = 0.04 + Math.random() * 0.025; // phase/s
+      spiralAngle[i] = Math.random() * Math.PI * 2;
+    } else {
+      // Core: stationære ved centrum
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      const r = Math.pow(Math.random(), 0.4) * 0.2;
+      positions[i3]     = r * Math.sin(phi) * Math.cos(theta);
+      positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i3 + 2] = r * Math.cos(phi);
+      const br = 0.9 + Math.random() * 0.15;
+      colors[i3] = colCore.r*br; colors[i3+1] = colCore.g*br; colors[i3+2] = colCore.b*br;
+    }
   }
 
-  var geo = new THREE.BufferGeometry();
+  const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
 
-  var mat = new THREE.PointsMaterial({
-    size: 0.09,
-    map: softCircleTexture(),
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.88,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.NormalBlending,
+  const mat = new THREE.PointsMaterial({
+    size: 0.1, map: softCircleTexture(), vertexColors: true,
+    transparent: true, opacity: 0.9, sizeAttenuation: true,
+    depthWrite: false, blending: THREE.NormalBlending,
   });
-
-  var points = new THREE.Points(geo, mat);
+  const points = new THREE.Points(geo, mat);
   scene.add(points);
-
-  var basePositions = new Float32Array(positions);
 
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
+    const elapsed = loopElapsed(state);
+    const pos = geo.attributes.position.array;
+    const col = geo.attributes.color.array;
 
-    var elapsed = loopElapsed(state);
-    var pos = geo.attributes.position.array;
+    const coreBreath = 1 + Math.sin(elapsed * Math.PI * 2 / 10) * 0.08;
 
-    // Slow, deep breathing — the whole nebula expands and contracts
-    var breath = 1 + Math.sin(elapsed * Math.PI * 2 / 12) * 0.05;
+    for (let i = 0; i < FLOW; i++) {
+      const i3 = i * 3;
+      // Fase avancerer: 0→1, wrap ved 1 (genfødes i periferien)
+      let ph = (spiralPhase[i] + elapsed * spiralSpeed[i]) % 1;
+      // Radius: ydre (ph=0) → centrum (ph=1)
+      const r = (1 - ph) * 2.3;
+      // Spiralvinkel: roterer med ph
+      const angle = spiralAngle[i] + ph * Math.PI * 5; // 2.5 omdrejninger
+      // 3D spiral (let z-variation)
+      pos[i3]     = r * Math.cos(angle);
+      pos[i3 + 1] = r * Math.sin(angle) * 0.75;
+      pos[i3 + 2] = Math.sin(ph * Math.PI) * 0.35 * Math.sin(angle * 0.5);
 
-    for (var i = 0; i < COUNT; i++) {
-      var i3 = i * 3;
-      var ph = phases[i];
-      var ds = driftSpeeds[i];
-      // Individual gentle drift — each particle wanders slightly
-      pos[i3]     = basePositions[i3]     * breath + Math.sin(elapsed * ds + ph) * 0.06;
-      pos[i3 + 1] = basePositions[i3 + 1] * breath + Math.cos(elapsed * ds * 0.8 + ph * 1.3) * 0.05;
-      pos[i3 + 2] = basePositions[i3 + 2] * breath + Math.sin(elapsed * ds * 0.6 + ph * 0.7) * 0.03;
+      // Farve: varm-grå ydre → guld midtvejs → rosa/lys ved centrum
+      if (ph < 0.5) {
+        const t = ph * 2;
+        col[i3]=colOuter.r+(colMid.r-colOuter.r)*t;
+        col[i3+1]=colOuter.g+(colMid.g-colOuter.g)*t;
+        col[i3+2]=colOuter.b+(colMid.b-colOuter.b)*t;
+      } else {
+        const t = (ph - 0.5) * 2;
+        col[i3]=colMid.r+(colInner.r-colMid.r)*t;
+        col[i3+1]=colMid.g+(colInner.g-colMid.g)*t;
+        col[i3+2]=colMid.b+(colInner.b-colMid.b)*t;
+      }
+    }
+    // Core ånder
+    for (let i = FLOW; i < COUNT; i++) {
+      const i3 = i * 3;
+      const phi = Math.acos(2 * ((i-FLOW)/CORE) - 1);
+      const theta = (i-FLOW) * 2.399;
+      const r = 0.15 * coreBreath;
+      pos[i3]     = r * Math.sin(phi) * Math.cos(theta + elapsed*0.2);
+      pos[i3 + 1] = r * Math.sin(phi) * Math.sin(theta + elapsed*0.2);
+      pos[i3 + 2] = r * Math.cos(phi);
     }
 
     geo.attributes.position.needsUpdate = true;
-
-    points.rotation.y = elapsed * 0.02;
-    points.rotation.x = Math.sin(elapsed * 0.05) * 0.04;
-
+    geo.attributes.color.needsUpdate = true;
+    points.rotation.y = elapsed * 0.015;
     renderer.render(scene, camera);
   }
   animate();
@@ -2389,13 +2364,13 @@ function initHjerterScene() {
       var i = c * PER_CLUSTER + p;
       var i3 = i * 3;
 
-      // Particles within cluster: small sphere
-      var lphi = Math.acos(2 * Math.random() - 1);
-      var ltheta = Math.random() * Math.PI * 2;
-      var lr = Math.pow(Math.random(), 0.55) * 0.4;
-      localOffsets[i3]     = lr * Math.sin(lphi) * Math.cos(ltheta);
-      localOffsets[i3 + 1] = lr * Math.sin(lphi) * Math.sin(ltheta);
-      localOffsets[i3 + 2] = lr * Math.cos(lphi);
+      // Partikler i hjerteform — tydeligt genkendeligt som hjerte
+      var ht = Math.random() * Math.PI * 2;
+      var hp = heartPoint(ht, 0.38);
+      var fill = Math.pow(Math.random(), 0.5);
+      localOffsets[i3]     = hp.x * fill + (Math.random()-0.5)*0.04;
+      localOffsets[i3 + 1] = hp.y * fill + (Math.random()-0.5)*0.04;
+      localOffsets[i3 + 2] = (Math.random()-0.5) * 0.12;
 
       positions[i3]     = ix + localOffsets[i3];
       positions[i3 + 1] = iy + localOffsets[i3 + 1];
