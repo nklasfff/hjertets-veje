@@ -125,6 +125,33 @@
     filter: brightness(1.25);
   }
 
+  /* Dark mode: eksplicitte overrides for elementer med inverse farveforhold.
+     Word-cards og note-block er "inverse" kort — de skal altid være mørke
+     med lys tekst, uanset tema. */
+  [data-theme="dark"] .word-card {
+    background: linear-gradient(155deg, #3a1a22 0%, #1e0e14 100%);
+    color: #efe5d3;
+    box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.5);
+  }
+  [data-theme="dark"] .word-card::before {
+    border-color: rgba(212, 187, 130, 0.22);
+  }
+  [data-theme="dark"] .word-card-script { color: #e0c98e; }
+  [data-theme="dark"] .word-card-title  { color: #efe5d3; }
+  [data-theme="dark"] .word-card-lang   { color: #d4bb82; }
+  [data-theme="dark"] .word-card-body   { color: rgba(239, 229, 211, 0.9); }
+
+  [data-theme="dark"] .note-block {
+    background: rgba(212, 187, 130, 0.06);
+    border-color: rgba(212, 187, 130, 0.25);
+    color: #9a8a82;
+  }
+
+  [data-theme="dark"] ::selection {
+    background: rgba(212, 187, 130, 0.35);
+    color: #efe5d3;
+  }
+
   .hero-content {
     position: absolute;
     inset: 0;
@@ -306,7 +333,7 @@
   .intro-text p {
     font-size: 1.3rem;
     line-height: 1.8;
-    color: #3a2525;
+    color: var(--text);
   }
 
   .drop-cap::first-letter {
