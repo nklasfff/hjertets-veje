@@ -1550,13 +1550,13 @@
   </nav>
 
   <script>
-  // Dark mode toggle
+  // Dark mode toggle — defaults til lys tilstand ved første besøg
   (function() {
     var THEME_KEY = 'hjertets-veje-theme';
     var toggle = document.getElementById('themeToggle');
     var saved = localStorage.getItem(THEME_KEY);
-    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var initial = saved || (prefersDark ? 'dark' : 'light');
+    // Første besøg: altid lys. Kun hvis brugeren selv har valgt, husker vi.
+    var initial = saved || 'light';
     function apply(theme) {
       if (theme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
