@@ -1396,14 +1396,14 @@ function initScene6() {
   // Hver spire har sin egen kvadratiske bezier-kurve (start, ctrl, end).
   const SPROUT_ORIGIN = { x: 0.0, y: -1.3 };
   const sproutPaths = [
-    // rosa — medfølelse (yderst til venstre)
-    { ctrl: { x: -0.55, y: -0.35 }, end: { x: -1.25, y:  0.55 } },
+    // rosa — medfølelse (yderst til venstre) — bred, tydelig fan
+    { ctrl: { x: -0.70, y: -0.20 }, end: { x: -1.60, y:  0.65 } },
     // lilla — skam
-    { ctrl: { x: -0.18, y: -0.15 }, end: { x: -0.42, y:  1.00 } },
+    { ctrl: { x: -0.22, y:  0.00 }, end: { x: -0.55, y:  1.10 } },
     // salvie — høflighed
-    { ctrl: { x:  0.18, y: -0.15 }, end: { x:  0.42, y:  1.00 } },
+    { ctrl: { x:  0.22, y:  0.00 }, end: { x:  0.55, y:  1.10 } },
     // guld — dømmekraft (yderst til højre)
-    { ctrl: { x:  0.55, y: -0.35 }, end: { x:  1.25, y:  0.55 } },
+    { ctrl: { x:  0.70, y: -0.20 }, end: { x:  1.60, y:  0.65 } },
   ];
 
   function quadBezier(sx, sy, cx, cy, ex, ey, t) {
@@ -1438,13 +1438,16 @@ function initScene6() {
       const i = d * DROP_PER + p;
       const i3 = i * 3;
 
-      // Naturlig dråbeform: smal top, bred bund (som en regndråbe)
-      const yNorm = Math.random(); // 0=top (smal), 1=bund (bred)
-      const rMax  = 0.26 * Math.pow(yNorm + 0.06, 0.6);
-      const rr    = Math.sqrt(Math.random()) * rMax;
+      // Tydelig naturlig dråbeform: spids top, rund bred bund
+      // y ∈ [0.5 (top/spids), -0.5 (bund/bred)]
+      // Radius = 0 ved top, max ved bund, med en buet overgang
+      const yRaw = Math.random();
+      const yPos = 0.5 - yRaw;                     // +0.5 (top) → -0.5 (bund)
+      const rMax = 0.04 + 0.28 * yRaw * yRaw;      // ~0 ved top, ~0.32 ved bund
+      const rr   = Math.sqrt(Math.random()) * rMax;
       const theta = Math.random() * Math.PI * 2;
       dropLocal[i3]     = rr * Math.cos(theta);
-      dropLocal[i3 + 1] = (0.45 - yNorm) * 0.85; // top opad, bund nedad
+      dropLocal[i3 + 1] = yPos * 0.9;
       dropLocal[i3 + 2] = rr * Math.sin(theta);
       dropIdx[i] = d;
       dropPhases[i] = Math.random() * Math.PI * 2;
@@ -1478,10 +1481,10 @@ function initScene6() {
   scene.add(dropMesh);
 
   // ============================================================
-  // SPIRER: 4 grupper × 80 partikler der vokser langs bezier
+  // SPIRER (4 SØJLER): 4 grupper × 140 partikler langs bezier
   // ============================================================
   const SPROUTS = 4;
-  const SPROUT_PER = 80;
+  const SPROUT_PER = 140;
   const SPROUT_TOTAL = SPROUTS * SPROUT_PER;
   const sproutPositions = new Float32Array(SPROUT_TOTAL * 3);
   const sproutColors    = new Float32Array(SPROUT_TOTAL * 3);
@@ -1522,7 +1525,7 @@ function initScene6() {
   sproutGeo.setAttribute('position', new THREE.BufferAttribute(sproutPositions, 3));
   sproutGeo.setAttribute('color',    new THREE.BufferAttribute(sproutColors, 3));
   const sproutMat = new THREE.PointsMaterial({
-    size: 0.095,
+    size: 0.12,
     map: softCircleTexture(),
     vertexColors: true,
     transparent: true,
@@ -1994,14 +1997,14 @@ function initScene8() {
 
     const elapsed = loopElapsed(state);
 
-    // 58 BPM puls til fase 3
-    const pulse58 = Math.sin(elapsed * (Math.PI * 2 / 1.034));
+    // 50 BPM puls — ensartet med alle scener
+    const pulse50 = Math.sin(elapsed * (Math.PI * 2 / 1.2));
 
     // --- Outline: blid ånding hele tiden, stærkere puls i fase 3 ---
     const oPos = outlineGeo.attributes.position.array;
-    const pulseAmp = elapsed > 8.0 && elapsed < 11.0 ? 0.04 : 0.015;
-    const pulseScale = elapsed > 8.0 && elapsed < 11.0
-      ? 1.0 + pulse58 * pulseAmp
+    const pulseAmp = elapsed > 8.0 ? 0.04 : 0.015;
+    const pulseScale = elapsed > 8.0
+      ? 1.0 + pulse50 * pulseAmp
       : 1.0 + Math.sin(elapsed * 0.8) * pulseAmp;
     for (let i = 0; i < OUTLINE_COUNT; i++) {
       const i3 = i * 3;
@@ -2031,8 +2034,8 @@ function initScene8() {
         let bz = fillBase[i3 + 2];
 
         // Puls i fase 3 (8-11s)
-        if (elapsed > 8.0 && elapsed < 11.0) {
-          const s = 1.0 + pulse58 * 0.04;
+        if (elapsed > 8.0) {
+          const s = 1.0 + pulse50 * 0.04;
           bx *= s;
           by *= s;
         }
@@ -2044,13 +2047,12 @@ function initScene8() {
     }
     fillGeo.attributes.position.needsUpdate = true;
 
-    // --- Tears: faldende tårer hele tiden ---
+    // --- Tears: faldende tårer hele tiden (elapsed-baseret) ---
     const tPos = tearGeo.attributes.position.array;
-    const dt = 1 / 60; // approx
     for (let i = 0; i < TEAR_COUNT; i++) {
       const i3 = i * 3;
-      tPos[i3 + 1] -= tearSpeeds[i] * dt;
-      tPos[i3]     += Math.sin(elapsed * 0.5 + tearPhases[i]) * 0.002;
+      tPos[i3 + 1] -= tearSpeeds[i] * 0.018;
+      tPos[i3]     += Math.sin(elapsed * 0.5 + tearPhases[i]) * 0.0015;
       // Wrap til toppen
       if (tPos[i3 + 1] < -tearSpreadY) {
         tPos[i3 + 1] = tearSpreadY;
