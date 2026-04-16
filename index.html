@@ -1288,7 +1288,7 @@
           <h3>Dine gemte refleksioner</h3>
           <div class="reflections-export">
             <button type="button" id="exportDownload" disabled>Download som dokument</button>
-            <button type="button" id="exportEmail" disabled>Send til mig selv</button>
+            <button type="button" id="exportEmail" disabled>Del dine refleksioner</button>
           </div>
           <div id="reflectionsList">
             <p class="reflection-empty">Du har endnu ikke gemt nogen refleksioner.</p>
@@ -1919,8 +1919,8 @@
           var file = new File([html], filename, { type: 'text/html' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
-              title: 'Mine refleksioner fra Hjertets Veje',
-              text: 'Mine gemte refleksioner fra Hjertets Veje, samlet som et smukt dokument du kan åbne i en browser.',
+              title: 'Refleksioner fra Hjertets Veje',
+              text: 'Refleksioner fra Hjertets Veje — et dokument du kan åbne i en browser.',
               files: [file]
             });
             return;
