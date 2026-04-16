@@ -1375,7 +1375,7 @@ function initScene6() {
   if (!ctx) return;
   const { scene, camera, renderer, state } = ctx;
 
-  camera.position.set(0, -0.2, 5.5);
+  camera.position.set(0, -0.15, 5.5);
 
   // ---- Timing ----
   const DROP_STARTS     = [0.0, 1.5, 3.0]; // sekventiel tænding over 0-6s
@@ -1464,11 +1464,68 @@ function initScene6() {
     }
   }
 
-  const dropGeo = new THREE.BufferGeometry();
-  dropGeo.setAttribute('position', new THREE.BufferAttribute(dropPositions, 3));
-  dropGeo.setAttribute('color',    new THREE.BufferAttribute(dropColors, 3));
-  const dropMat = new THREE.PointsMaterial({
-    size: 0.1,
+  // ============================================================
+  // ALT I ÉT Points-objekt: dråber + 4 søjler
+  // ============================================================
+  const SPROUTS = 4;
+  const SPROUT_PER = 120;
+  const SPROUT_TOTAL = SPROUTS * SPROUT_PER;
+  const COL_HEIGHT = 2.2;
+  const TOTAL = DROP_TOTAL + SPROUT_TOTAL;
+
+  const colBases = [
+    { x: -1.1, y: -1.2 },
+    { x: -0.37, y: -1.35 },
+    { x:  0.37, y: -1.35 },
+    { x:  1.1, y: -1.2 },
+  ];
+
+  // Samlet positions + colors array
+  const allPositions = new Float32Array(TOTAL * 3);
+  const allColors    = new Float32Array(TOTAL * 3);
+
+  // Kopier dråber ind (offset 0)
+  for (let i = 0; i < DROP_TOTAL; i++) {
+    const i3 = i * 3;
+    allPositions[i3]     = dropPositions[i3];
+    allPositions[i3 + 1] = dropPositions[i3 + 1];
+    allPositions[i3 + 2] = dropPositions[i3 + 2];
+    allColors[i3]     = dropColors[i3];
+    allColors[i3 + 1] = dropColors[i3 + 1];
+    allColors[i3 + 2] = dropColors[i3 + 2];
+  }
+
+  // Søjle-data (offset DROP_TOTAL)
+  const sproutYNorm = new Float32Array(SPROUT_TOTAL);
+  const sproutCol   = new Int8Array(SPROUT_TOTAL);
+  const sproutWob   = new Float32Array(SPROUT_TOTAL);
+
+  for (let s = 0; s < SPROUTS; s++) {
+    const col = sproutPalette[s];
+    for (let p = 0; p < SPROUT_PER; p++) {
+      const si = s * SPROUT_PER + p;
+      const gi = DROP_TOTAL + si; // global index
+      const i3 = gi * 3;
+      sproutYNorm[si] = p / SPROUT_PER;
+      sproutCol[si] = s;
+      sproutWob[si] = Math.random() * Math.PI * 2;
+
+      allPositions[i3]     = -100;
+      allPositions[i3 + 1] = -100;
+      allPositions[i3 + 2] = 0;
+
+      const bright = 0.85 + Math.random() * 0.25;
+      allColors[i3]     = col.r * bright;
+      allColors[i3 + 1] = col.g * bright;
+      allColors[i3 + 2] = col.b * bright;
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(allPositions, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(allColors, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 0.11,
     map: softCircleTexture(),
     vertexColors: true,
     transparent: true,
@@ -1477,145 +1534,78 @@ function initScene6() {
     depthWrite: false,
     blending: THREE.NormalBlending,
   });
-  const dropMesh = new THREE.Points(dropGeo, dropMat);
-  scene.add(dropMesh);
-
-  // ============================================================
-  // 4 SØJLER: simple lige kolonner der vokser opad fra dråberne
-  // Ingen bezier — ren y-vækst for garanti om synlighed.
-  // ============================================================
-  const SPROUTS = 4;
-  const SPROUT_PER = 120;
-  const SPROUT_TOTAL = SPROUTS * SPROUT_PER;
-  const COL_HEIGHT = 2.2;
-
-  // Søjle-baser: jævnt fordelt mellem dråberne
-  const colBases = [
-    { x: -1.1, y: -1.2 },
-    { x: -0.37, y: -1.35 },
-    { x:  0.37, y: -1.35 },
-    { x:  1.1, y: -1.2 },
-  ];
-
-  // Alle partikler i ét enkelt Points-objekt sammen med dråberne
-  const sproutPositions = new Float32Array(SPROUT_TOTAL * 3);
-  const sproutColors    = new Float32Array(SPROUT_TOTAL * 3);
-  const sproutYNorm     = new Float32Array(SPROUT_TOTAL); // 0=bund, 1=top
-  const sproutCol       = new Int8Array(SPROUT_TOTAL);    // søjle-index
-  const sproutWob       = new Float32Array(SPROUT_TOTAL);
-
-  for (let s = 0; s < SPROUTS; s++) {
-    const col = sproutPalette[s];
-    for (let p = 0; p < SPROUT_PER; p++) {
-      const i = s * SPROUT_PER + p;
-      const i3 = i * 3;
-      sproutYNorm[i] = p / SPROUT_PER;
-      sproutCol[i] = s;
-      sproutWob[i] = Math.random() * Math.PI * 2;
-
-      // Start usynligt
-      sproutPositions[i3]     = -100;
-      sproutPositions[i3 + 1] = -100;
-      sproutPositions[i3 + 2] = 0;
-
-      const bright = 0.85 + Math.random() * 0.25;
-      sproutColors[i3]     = col.r * bright;
-      sproutColors[i3 + 1] = col.g * bright;
-      sproutColors[i3 + 2] = col.b * bright;
-    }
-  }
-
-  const sproutGeo = new THREE.BufferGeometry();
-  sproutGeo.setAttribute('position', new THREE.BufferAttribute(sproutPositions, 3));
-  sproutGeo.setAttribute('color',    new THREE.BufferAttribute(sproutColors, 3));
-  const sproutMat = new THREE.PointsMaterial({
-    size: 0.12,
-    map: softCircleTexture(),
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.94,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.NormalBlending,
-  });
-  const sproutMesh = new THREE.Points(sproutGeo, sproutMat);
-  scene.add(sproutMesh);
+  const allMesh = new THREE.Points(geo, mat);
+  scene.add(allMesh);
 
   function animate() {
     requestAnimationFrame(animate);
     if (!state.active) return;
 
     const elapsed = loopElapsed(state);
+    const pos = geo.attributes.position.array;
 
-    // ---- DRÅBER ----
-    const dPos = dropGeo.attributes.position.array;
+    // ---- DRÅBER (index 0 til DROP_TOTAL) ----
     for (let i = 0; i < DROP_TOTAL; i++) {
       const i3 = i * 3;
       const d = dropIdx[i];
       const dropT = elapsed - DROP_STARTS[d];
 
       if (dropT < 0) {
-        dPos[i3]     = dropAnchors[d].x + dropLocal[i3];
-        dPos[i3 + 1] = DROP_START_Y      + dropLocal[i3 + 1];
-        dPos[i3 + 2] =                    dropLocal[i3 + 2];
+        pos[i3]     = dropAnchors[d].x + dropLocal[i3];
+        pos[i3 + 1] = DROP_START_Y      + dropLocal[i3 + 1];
+        pos[i3 + 2] =                    dropLocal[i3 + 2];
       } else if (dropT < DROP_FALL_DUR) {
         const tNorm = dropT / DROP_FALL_DUR;
         const eased = easeInOutQuad(tNorm);
         const y = DROP_START_Y + (dropAnchors[d].y - DROP_START_Y) * eased;
-        dPos[i3]     = dropAnchors[d].x + dropLocal[i3];
-        dPos[i3 + 1] = y                 + dropLocal[i3 + 1];
-        dPos[i3 + 2] =                    dropLocal[i3 + 2];
+        pos[i3]     = dropAnchors[d].x + dropLocal[i3];
+        pos[i3 + 1] = y                 + dropLocal[i3 + 1];
+        pos[i3 + 2] =                    dropLocal[i3 + 2];
       } else {
         const rest = dropT - DROP_FALL_DUR;
         const br = 1 + Math.sin(rest * 0.9 + dropPhases[i]) * 0.025;
-        dPos[i3]     = dropAnchors[d].x + dropLocal[i3]     * br;
-        dPos[i3 + 1] = dropAnchors[d].y + dropLocal[i3 + 1] * br;
-        dPos[i3 + 2] =                    dropLocal[i3 + 2];
+        pos[i3]     = dropAnchors[d].x + dropLocal[i3]     * br;
+        pos[i3 + 1] = dropAnchors[d].y + dropLocal[i3 + 1] * br;
+        pos[i3 + 2] =                    dropLocal[i3 + 2];
       }
     }
-    dropGeo.attributes.position.needsUpdate = true;
-
-    // ---- 4 SØJLER: vokser opad fra 6-10s ----
-    const sPos = sproutGeo.attributes.position.array;
+    // ---- 4 SØJLER (index DROP_TOTAL til TOTAL) ----
     const sproutT = Math.max(0, elapsed - SPROUT_START);
     const growth = easeOutCubic(Math.min(1, sproutT / SPROUT_DURATION));
     const currentHeight = COL_HEIGHT * growth;
 
-    for (let i = 0; i < SPROUT_TOTAL; i++) {
-      const i3 = i * 3;
-      const s = sproutCol[i];
+    for (let si = 0; si < SPROUT_TOTAL; si++) {
+      const gi = DROP_TOTAL + si;
+      const i3 = gi * 3;
+      const s = sproutCol[si];
       const base = colBases[s];
 
       if (sproutT <= 0) {
-        sPos[i3] = -100; sPos[i3+1] = -100; sPos[i3+2] = 0;
+        pos[i3] = -100; pos[i3+1] = -100; pos[i3+2] = 0;
       } else {
-        // Simpel lige søjle: base.x + lille jitter, base.y + yNorm*height
-        const yTarget = sproutYNorm[i] * currentHeight;
-        // Søjlen er tynd: ±0.08 på x, ±0.06 på z, tapering mod toppen
-        const taper = 1 - sproutYNorm[i] * 0.4;
-        const jx = Math.sin(sproutWob[i] * 7.3) * 0.09 * taper;
-        const jz = Math.cos(sproutWob[i] * 5.7) * 0.07 * taper;
-        // Blid vuggen mod toppen
-        const sway = Math.sin(elapsed * 0.55 + sproutWob[i] + s * 0.8)
-                   * 0.05 * sproutYNorm[i];
+        const yTarget = sproutYNorm[si] * currentHeight;
+        const taper = 1 - sproutYNorm[si] * 0.4;
+        const jx = Math.sin(sproutWob[si] * 7.3) * 0.09 * taper;
+        const jz = Math.cos(sproutWob[si] * 5.7) * 0.07 * taper;
+        const sway = Math.sin(elapsed * 0.55 + sproutWob[si] + s * 0.8)
+                   * 0.05 * sproutYNorm[si];
 
-        sPos[i3]     = base.x + jx + sway;
-        sPos[i3 + 1] = base.y + yTarget;
-        sPos[i3 + 2] = jz;
+        pos[i3]     = base.x + jx + sway;
+        pos[i3 + 1] = base.y + yTarget;
+        pos[i3 + 2] = jz;
       }
     }
-    sproutGeo.attributes.position.needsUpdate = true;
+
+    geo.attributes.position.needsUpdate = true;
 
     // ---- Pulsering 10-14s ----
     if (elapsed > 10) {
       const pulseT = elapsed * (50 / 60);
       const pBeat = Math.pow(Math.max(0, Math.sin(pulseT * Math.PI * 2)), 3);
       const p = 1 + pBeat * 0.035;
-      dropMesh.scale.set(p, p, p);
-      sproutMesh.scale.set(p, p, p);
+      allMesh.scale.set(p, p, p);
     } else {
-      dropMesh.scale.set(1, 1, 1);
-      sproutMesh.scale.set(1, 1, 1);
+      allMesh.scale.set(1, 1, 1);
     }
 
     renderer.render(scene, camera);
