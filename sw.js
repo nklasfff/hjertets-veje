@@ -1,49 +1,60 @@
-const CACHE_NAME = 'hjertets-veje-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/scenes.js',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Instrument+Sans:wght@400;500&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
-];
+// Hjertets Veje — minimalistisk service worker.
+// Designet til at FALDE TILBAGE STILLE hvis noget går galt, så den
+// aldrig blokerer siden fra at indlæse.
 
-// Install: cache alle filer
+var CACHE = 'hjertets-veje-v2';
+
+// Kun lokale assets pre-caches. Eksterne (CDN, fonts) caches on-demand
+// så install ikke fejler hvis netværket har problemer med dem.
+var PRECACHE = ['./', './index.html', './scenes.js', './manifest.json'];
+
 self.addEventListener('install', function(e) {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE).then(function(cache) {
+      // addAll fejler hvis én ressource ikke kan hentes — brug individuel
+      // tilføjelse så install aldrig fejler totalt
+      return Promise.all(PRECACHE.map(function(url) {
+        return cache.add(url).catch(function() {});
+      }));
+    }).then(function() { return self.skipWaiting(); })
   );
-  self.skipWaiting();
 });
 
-// Activate: ryd gamle caches
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(names) {
       return Promise.all(
-        names.filter(function(n) { return n !== CACHE_NAME; })
+        names.filter(function(n) { return n !== CACHE; })
              .map(function(n) { return caches.delete(n); })
       );
-    })
+    }).then(function() { return self.clients.claim(); })
   );
-  self.clients.claim();
 });
 
-// Fetch: netværk først, fallback til cache (sikrer friske opdateringer)
+// Fetch-strategi: network-first, cache-fallback. Kun GET-requests cache.
 self.addEventListener('fetch', function(e) {
+  var req = e.request;
+  // Ignorér non-GET (POST, osv.) og navigation-preloads
+  if (req.method !== 'GET') return;
+  // Ignorér cross-origin hvor caching kan fejle
+  var url = new URL(req.url);
+  var sameOrigin = url.origin === self.location.origin;
+
   e.respondWith(
-    fetch(e.request).then(function(response) {
-      // Gem kopi i cache
-      var clone = response.clone();
-      caches.open(CACHE_NAME).then(function(cache) {
-        cache.put(e.request, clone);
-      });
+    fetch(req).then(function(response) {
+      // Cache kun same-origin, successful responses
+      if (sameOrigin && response && response.status === 200 && response.type === 'basic') {
+        var clone = response.clone();
+        caches.open(CACHE).then(function(cache) {
+          cache.put(req, clone).catch(function() {});
+        });
+      }
       return response;
     }).catch(function() {
-      // Offline: brug cache
-      return caches.match(e.request);
+      // Offline: forsøg cache, eller lad browseren håndtere fejlen
+      return caches.match(req).then(function(cached) {
+        return cached || new Response('', { status: 503, statusText: 'Offline' });
+      });
     })
   );
 });

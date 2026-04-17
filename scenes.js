@@ -163,20 +163,11 @@ function mobileScale() {
   return Math.min(1, window.innerWidth / 700);
 }
 
-/* ---------- SCROLL-REVEAL (sektioner) ----------
-   Separat observer der tilføjer .visible til .section-elementer. */
-function initScrollReveal() {
-  const sections = document.querySelectorAll('.section');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12, rootMargin: '0px 0px -80px 0px' });
-  sections.forEach((s) => io.observe(s));
-}
+/* ---------- SCROLL-REVEAL (flyttet til index.html) ----------
+   initScrollReveal findes i index.html så det virker selv hvis
+   scenes.js ikke kan indlæses (fx CDN blokeret). Tom stub her
+   så eksisterende kald fra DOMContentLoaded ikke fejler. */
+function initScrollReveal() { /* no-op — håndteret i index.html */ }
 
 /* ============================================================
    HERO — "Regnen i hele verden"
