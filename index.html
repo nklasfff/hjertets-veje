@@ -83,7 +83,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
-    padding-bottom: 80px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 
   ::selection { background: var(--guld); color: var(--bordeaux-deep); }
@@ -586,10 +586,10 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid rgba(196,162,101,0.2);
-    padding: 0.9rem 1.5rem;
+    padding: 0.6rem 1.2rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
     z-index: 100;
     transition: background 0.4s;
   }
@@ -599,12 +599,15 @@
   }
   .screen-nav a {
     font-family: var(--sans);
-    font-size: 0.72rem;
+    font-size: 0.64rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-muted);
     text-decoration: none;
     transition: color 0.3s;
+  }
+  .screen-nav a::first-letter {
+    color: var(--bordeaux);
   }
   .screen-nav a.active {
     color: var(--bordeaux);
@@ -614,8 +617,12 @@
   .screen-nav a:hover { color: var(--bordeaux); }
 
   @media (max-width: 600px) {
-    .screen-nav { gap: 1rem; padding: 0.8rem 1rem; overflow-x: auto; }
-    .screen-nav a { font-size: 0.65rem; white-space: nowrap; }
+    .screen-nav {
+      gap: 0.85rem;
+      padding: 0.55rem 0.8rem calc(0.25rem + env(safe-area-inset-bottom, 0px));
+      overflow-x: auto;
+    }
+    .screen-nav a { font-size: 0.58rem; white-space: nowrap; }
   }
 
   /* ---------- SCREENS ---------- */
