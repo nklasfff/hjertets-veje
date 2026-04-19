@@ -32,7 +32,9 @@ Det ord, som er blevet ved at vende tilbage, er overgivelse. Ikke som opgivelse,
 
 Det spørgsmål har intet svar, der kan gives udefra. Men det har en vej. Og den vej går igennem hjertet.
 
-Niklas har i sidste øjeblik måttet trække sig fra undervisningen på dagen. I hans sted træder Jakob Mikkelsen til, en nær ven og kollega af både Sonja og Niklas. Jakob har gennem mere end fyrre år arbejdet i dette felt med behandlinger og undervisning, og han har gennem hele sit voksne liv dagligt praktiseret og undervist i tai chi. Han har selv gået gennem dybe forvandlinger, og han bringer sin egen stemme med ind i dagen, sammen med Sonja.
+Temadagen havde sin debut i Aarhus den 17. april, og det blev en dag, der overgik vores forventninger. Jakob Mikkelsen, en nær ven og kollega af både Sonja og Niklas, trådte til som medunderviser, da Niklas i sidste øjeblik måtte trække sig. Jakob har gennem mere end fyrre år arbejdet i dette felt med behandlinger og undervisning, og han har gennem hele sit voksne liv dagligt praktiseret og undervist i tai chi. Han bragte sin egen stemme og erfaring med ind i dagen, og sammen skabte han og Sonja et rum, der bar.
+
+Temadagen i Roskilde den 24. april er udsat og vil blive afholdt efter sommerferien, hvor Sonja og Niklas arbejder videre ud fra den vellykkede start i Aarhus. Har du tilmeldt dig Roskilde, vil du høre nærmere om den nye dato.
 
 ---
 
@@ -209,7 +211,7 @@ source: Jørgen Leth
 
 ## [KAPITEL V — fortsat]
 
-Jakob Mikkelsen bringer til denne del af dagen sine mere end fyrre års erfaring med behandlinger. Gennem det arbejde er han kommet til at kende berøringen ikke som teknik, men som et møde. Han vil dele nogle af de iagttagelser, der gennem årene er blevet hans stille kompagnon i rummet ved briksen.
+I Aarhus delte Jakob Mikkelsen nogle af de erfaringer, han har samlet gennem mere end fyrre års arbejde ved briksen. Han viste, hvordan hjertet kan mødes gennem hænderne, når hænderne selv er forankret i stilhed. De greb og tilgange, han åbnede for, er nu en del af temadagens fundament og vil følge med videre, når temadagen afholdes igen efter sommerferien.
 
 I løbet af dagen vil der være sessioner, hvor vi sammen undersøger den kunst at lade hjertets og hændernes intention blive ét. Det handler ikke så meget om, hvad vi gør, som om, hvorfra vi gør det. Den berøring, vi taler om, springer ikke ud af kunnen alene. Den kommer fra det sted i os, hvor viden og stilhed mødes.
 
