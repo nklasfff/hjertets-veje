@@ -32,7 +32,7 @@ Det ord, som er blevet ved at vende tilbage, er overgivelse. Ikke som opgivelse,
 
 Det spørgsmål har intet svar, der kan gives udefra. Men det har en vej. Og den vej går igennem hjertet.
 
-Temadagen havde sin debut i Aarhus den 17. april, og det blev en dag, der overgik vores forventninger. Jakob Mikkelsen, en nær ven og kollega af både Sonja og Niklas, trådte til som medunderviser, da Niklas i sidste øjeblik måtte trække sig. Jakob har gennem mere end fyrre år arbejdet i dette felt med behandlinger og undervisning, og han har gennem hele sit voksne liv dagligt praktiseret og undervist i tai chi. Han bragte sin egen stemme og erfaring med ind i dagen, og sammen skabte han og Sonja et rum, der bar.
+Temadagen havde sin debut i Aarhus den 17. april, og det blev en dag, der overgik vores forventninger. Jakob Mikkelsen, en nær ven og kollega af både Sonja og Niklas, trådte til som medunderviser, da Niklas i sidste øjeblik måtte trække sig. Jakob har gennem mere end fyrre år arbejdet i dette felt med behandlinger og undervisning, og han har gennem hele sit voksne liv dagligt praktiseret og undervist i tai chi. Han bragte sin egen stemme og erfaring med ind i dagen, og sammen skabte han og Sonja et rum, der holdt og bar holdet gennem hjertets mange invitationer.
 
 Temadagen i Roskilde den 24. april er udsat og vil blive afholdt efter sommerferien, hvor Sonja og Niklas arbejder videre ud fra den vellykkede start i Aarhus. Har du tilmeldt dig Roskilde, vil du høre nærmere om den nye dato.
 
